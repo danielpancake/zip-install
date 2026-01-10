@@ -10,7 +10,9 @@ opt-level = "s"
 strip = true
 
 [dependencies]
+anyhow = "1.0.100"
 eframe = "0.33.3"
+zip = "7.0.0"
 
 [dependencies.native-dialog]
 version = "0.9.4"
