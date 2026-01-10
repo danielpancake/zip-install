@@ -11,8 +11,14 @@ strip = true
 
 [dependencies]
 anyhow = "1.0.100"
+dirs = "6.0.0"
 eframe = "0.33.3"
+mslnk = "0.1.8"
 zip = "7.0.0"
+
+[dependencies.uuid]
+version = "1.19.0"
+features = ["v4"]
 
 [dependencies.native-dialog]
 version = "0.9.4"
