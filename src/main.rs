@@ -2,22 +2,24 @@
 
 use crate::{
     archive::open_archive,
-    config::default_options,
-    utils::{show_error_message, show_warning_message},
+    config::{APP_TITLE, default_options},
+    messages::{show_error_message, show_warning_message},
 };
 
 mod app;
 mod archive;
 mod config;
+mod installer;
+mod messages;
 mod models;
-mod utils;
+mod shortcuts;
 
 fn self_install() {}
 
 fn zip_install(arg: String) {
     let archive_path = std::path::Path::new(&arg);
 
-    let mut archive = match open_archive(archive_path) {
+    let archive = match open_archive(archive_path) {
         Ok(archive) => archive,
         Err(err) => {
             show_error_message(&format!("Failed to open archive: {}", err));
@@ -25,17 +27,15 @@ fn zip_install(arg: String) {
         }
     };
 
-    let executables = archive.candidates();
+    let app = app::App::new(archive);
 
-    if executables.is_empty() {
+    if app.executables.is_empty() {
         show_warning_message("No executable files were found in the archive.");
         return;
     }
 
-    let app = app::App::new(executables);
-
     eframe::run_native(
-        "zip-install",
+        APP_TITLE,
         default_options(),
         Box::new(|_cc| Ok(Box::new(app))),
     )

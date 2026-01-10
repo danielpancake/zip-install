@@ -1,7 +1,15 @@
-use crate::{config::WINDOW_WIDTH, models::ApplicationEntry};
+use crate::{
+    archive::Archive,
+    config::WINDOW_WIDTH,
+    installer::install,
+    messages::{show_error_message, show_info_message},
+    models::ApplicationEntry,
+};
 use eframe::egui;
 
 pub struct App {
+    pub archive: Box<dyn Archive>,
+
     pub executables: Vec<ApplicationEntry>,
     pub selected_index: usize,
 
@@ -10,8 +18,11 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(executables: Vec<ApplicationEntry>) -> Self {
+    pub fn new(mut archive: Box<dyn Archive>) -> Self {
+        let executables = archive.candidates();
+
         Self {
+            archive,
             executables,
             selected_index: 0,
             create_desktop: true,
@@ -60,12 +71,32 @@ impl eframe::App for App {
                         let button_width = (ui.available_width() - 8.0) / 2.0;
 
                         ui.horizontal(|ui| {
-                            ui.add_sized([button_width, 26.0], egui::Button::new("Install"));
-                            ui.add_sized([button_width, 26.0], egui::Button::new("Cancel"));
-                        });
+                            ui.add_sized([button_width, 26.0], egui::Button::new("Install"))
+                                .clicked()
+                                .then(|| {
+                                    match install(
+                                        self.archive.as_mut(),
+                                        self.executables[self.selected_index].clone(),
+                                        self.create_desktop,
+                                        self.create_start_menu,
+                                    ) {
+                                        Ok(_) => {
+                                            show_info_message("Application installed successfully.")
+                                        }
+                                        Err(e) => {
+                                            show_error_message(&format!(
+                                                "Failed to install! {}",
+                                                e
+                                            ));
+                                        }
+                                    }
+                                    ctx.send_viewport_cmd(egui::ViewportCommand::Close)
+                                });
 
-                        // ui.add_space(6.0);
-                        // ui.small("Mock data mode");
+                            ui.add_sized([button_width, 26.0], egui::Button::new("Cancel"))
+                                .clicked()
+                                .then(|| ctx.send_viewport_cmd(egui::ViewportCommand::Close));
+                        });
                     });
                 });
             });
