@@ -18,6 +18,11 @@ impl ZipArchiveHandler {
 }
 
 impl Archive for ZipArchiveHandler {
+    fn extract(&mut self, output_dir: &Path) -> Result<()> {
+        self.zip.extract(output_dir)?;
+        Ok(())
+    }
+
     fn list(&mut self) -> Vec<String> {
         self.zip.file_names().map(|name| name.to_string()).collect()
     }
