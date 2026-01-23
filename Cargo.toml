@@ -13,12 +13,7 @@ strip = true
 anyhow = "1.0.100"
 dirs = "6.0.0"
 eframe = "0.33.3"
-mslnk = "0.1.8"
 zip = "7.0.0"
-
-[dependencies.uuid]
-version = "1.19.0"
-features = ["v4"]
 
 [dependencies.native-dialog]
 version = "0.9.4"
@@ -26,3 +21,11 @@ features = [
     "windows_dpi_awareness",
     "windows_visual_styles"
 ]
+
+[dependencies.uuid]
+version = "1.19.0"
+features = ["v4"]
+
+[target.'cfg(windows)'.dependencies]
+mslnk = "0.1.8"
+winreg = "0.55.0"

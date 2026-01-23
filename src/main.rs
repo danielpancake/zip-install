@@ -1,4 +1,6 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
+
+use eframe::egui::menu::context_menu;
 
 use crate::{
     archive::open_archive,
@@ -9,6 +11,7 @@ use crate::{
 mod app;
 mod archive;
 mod config;
+mod context_menu;
 mod installer;
 mod messages;
 mod models;
@@ -43,6 +46,10 @@ fn zip_install(arg: String) {
 }
 
 fn main() {
+    // let config = context_menu::ContextMenuConfig::new("Install with zip-install", "...");
+    // let extensions = vec![".zip"];
+    // context_menu::add_context_menu("zip-install", &config, &extensions).unwrap();
+
     match std::env::args().nth(1) {
         None => self_install(),
         Some(arg) => zip_install(arg),
