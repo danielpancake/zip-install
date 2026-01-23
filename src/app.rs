@@ -51,15 +51,18 @@ impl eframe::App for App {
                         }
 
                         let width = ui.available_width();
+                        let has_multiple_exes = self.executables.len() > 1;
 
-                        egui::ComboBox::from_id_salt("exe_select")
-                            .width(width)
-                            .selected_text(&self.executables[self.selected_index].name)
-                            .show_ui(ui, |ui| {
-                                for (i, exe) in self.executables.iter().enumerate() {
-                                    ui.selectable_value(&mut self.selected_index, i, &exe.name);
-                                }
-                            });
+                        ui.add_enabled_ui(has_multiple_exes, |ui| {
+                            egui::ComboBox::from_id_salt("exe_select")
+                                .width(width)
+                                .selected_text(&self.executables[self.selected_index].name)
+                                .show_ui(ui, |ui| {
+                                    for (i, exe) in self.executables.iter().enumerate() {
+                                        ui.selectable_value(&mut self.selected_index, i, &exe.name);
+                                    }
+                                });
+                        });
 
                         ui.add_space(8.0);
 

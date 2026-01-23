@@ -29,10 +29,27 @@ pub trait Archive {
 }
 
 pub fn open_archive(path: &Path) -> Result<Box<dyn Archive>> {
-    let archive = ZipArchiveHandler::open(path)?;
-    Ok(Box::new(archive))
+    let extension = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+
+    match extension.as_str() {
+        "exe" => {
+            let archive = SingleExeHandler::open(path)?;
+            Ok(Box::new(archive))
+        }
+        "zip" => {
+            let archive = ZipArchiveHandler::open(path)?;
+            Ok(Box::new(archive))
+        }
+        _ => Err(anyhow::anyhow!("Unsupported file format: .{}", extension)),
+    }
 }
 
+mod exe;
 mod zip;
 
+pub use exe::SingleExeHandler;
 pub use zip::ZipArchiveHandler;
