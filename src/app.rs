@@ -1,6 +1,6 @@
 use crate::{
     archive::Archive,
-    config::WINDOW_WIDTH,
+    config::MIN_WINDOW_WIDTH,
     installer::install,
     messages::{show_error_message, show_info_message},
     models::ApplicationEntry,
@@ -34,7 +34,7 @@ impl App {
 impl eframe::App for App {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            let panel_width = WINDOW_WIDTH.min(ui.available_width() * 0.9);
+            let panel_width = MIN_WINDOW_WIDTH.min(ui.available_width() * 0.9);
 
             ui.with_layout(egui::Layout::top_down(egui::Align::Center), |ui| {
                 ui.add_space(12.0);

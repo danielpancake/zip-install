@@ -1,23 +1,32 @@
 // #![windows_subsystem = "windows"]
 
-use eframe::egui::menu::context_menu;
-
 use crate::{
     archive::open_archive,
     config::{APP_TITLE, default_options},
     messages::{show_error_message, show_warning_message},
+    self_install_app::SelfInstallApp,
 };
 
 mod app;
 mod archive;
 mod config;
-mod context_menu;
+mod install_state;
 mod installer;
 mod messages;
 mod models;
+mod self_install_app;
 mod shortcuts;
 
-fn self_install() {}
+fn self_install() {
+    let app = SelfInstallApp::new();
+
+    eframe::run_native(
+        APP_TITLE,
+        default_options(),
+        Box::new(|_cc| Ok(Box::new(app))),
+    )
+    .unwrap();
+}
 
 fn zip_install(arg: String) {
     let archive_path = std::path::Path::new(&arg);
@@ -46,10 +55,6 @@ fn zip_install(arg: String) {
 }
 
 fn main() {
-    // let config = context_menu::ContextMenuConfig::new("Install with zip-install", "...");
-    // let extensions = vec![".zip"];
-    // context_menu::add_context_menu("zip-install", &config, &extensions).unwrap();
-
     match std::env::args().nth(1) {
         None => self_install(),
         Some(arg) => zip_install(arg),
