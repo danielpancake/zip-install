@@ -1,87 +1,71 @@
+use std::path::PathBuf;
+
 use anyhow::Result;
-use winreg::enums::*;
 use winreg::RegKey;
+use winreg::enums::*;
 
-pub struct ContextMenuConfig {
-    pub menu_text: String,
-    pub exe_path: String,
-    pub command_args: String,
-    pub icon_path: Option<String>,
+pub struct ContextMenuItem {
+    pub label: String,
+    pub icon_path: Option<PathBuf>,
+    pub executable_path: PathBuf,
+    pub args: String,
 }
-
-pub fn get_progid(extension: &str) -> Option<String> {
-    let ext = if extension.starts_with('.') {
-        extension.to_string()
-    } else {
-        format!(".{}", extension)
-    };
-
-    let hkcr = RegKey::predef(HKEY_CLASSES_ROOT);
-    hkcr.open_subkey(&ext).ok()?.get_value("").ok()
-}
-
-impl ContextMenuConfig {
-    pub fn new(menu_text: impl Into<String>, exe_path: impl Into<String>) -> Self {
+impl ContextMenuItem {
+    pub fn new(label: impl Into<String>, executable_path: impl Into<PathBuf>) -> Self {
         Self {
-            menu_text: menu_text.into(),
-            exe_path: exe_path.into(),
-            command_args: "\"%1\"".to_string(),
+            label: label.into(),
             icon_path: None,
+            executable_path: executable_path.into(),
+            args: "\"%1\"".into(),
         }
     }
-
     pub fn with_args(mut self, args: impl Into<String>) -> Self {
-        self.command_args = args.into();
+        self.args = args.into();
         self
     }
-
-    pub fn with_icon(mut self, icon: impl Into<String>) -> Self {
-        self.icon_path = Some(icon.into());
+    pub fn with_icon_path(mut self, icon_path: impl Into<PathBuf>) -> Self {
+        self.icon_path = Some(icon_path.into());
         self
     }
 }
-
-pub fn add_context_menu(
-    app_name: &str,
-    config: &ContextMenuConfig,
-    extensions: &[&str],
-) -> Result<()> {
-    for ext in extensions {
-        if let Some(progid) = get_progid(ext) {
-            add_for_extension(app_name, &progid, config)?;
-        }
-    }
-    Ok(())
-}
-
-fn add_for_extension(app_name: &str, extension: &str, config: &ContextMenuConfig) -> Result<()> {
+pub fn add_context_menu(app_name: &str, item: &ContextMenuItem, extensions: &[&str]) -> Result<()> {
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-    let ext_key = format!("Software\\Classes\\{}\\shell\\{}", extension, app_name);
-
-    let (menu_key, _) = hkcu.create_subkey(&ext_key)?;
-    menu_key.set_value("", &config.menu_text)?;
-
-    if let Some(icon) = &config.icon_path {
-        menu_key.set_value("Icon", icon)?;
+    for ext in extensions {
+        let Some(progid) = get_progid(ext) else {
+            continue;
+        };
+        let base = format!(r"Software\Classes\{progid}\shell\{app_name}");
+        let (menu, _) = hkcu.create_subkey(&base)?;
+        menu.set_value("", &item.label)?;
+        if let Some(icon) = &item.icon_path {
+            menu.set_value("Icon", &icon.as_os_str())?;
+        }
+        let (cmd, _) = hkcu.create_subkey(format!(r"{base}\command"))?;
+        let command = format!(
+            r#""{}" {}"#,
+            item.executable_path.to_string_lossy(),
+            item.args
+        );
+        cmd.set_value("", &command)?;
     }
-
-    let (command_key, _) = hkcu.create_subkey(format!("{}\\command", ext_key))?;
-    command_key.set_value(
-        "",
-        &format!("\"{}\" {}", config.exe_path, config.command_args),
-    )?;
-
     Ok(())
 }
-
 pub fn remove_context_menu(app_name: &str, extensions: &[&str]) -> Result<()> {
     let hkcu = RegKey::predef(HKEY_CURRENT_USER);
-
     for ext in extensions {
-        let shell_path = format!("Software\\Classes\\{}\\shell", ext);
-        if let Ok(shell_key) = hkcu.open_subkey_with_flags(&shell_path, KEY_WRITE) {
-            let _ = shell_key.delete_subkey_all(app_name);
+        let Some(progid) = get_progid(ext) else {
+            continue;
+        };
+        let path = format!(r"Software\Classes\{progid}\shell");
+        if let Ok(key) = hkcu.open_subkey_with_flags(&path, KEY_WRITE) {
+            let _ = key.delete_subkey_all(app_name);
         }
     }
     Ok(())
+}
+fn get_progid(ext: &str) -> Option<String> {
+    RegKey::predef(HKEY_CLASSES_ROOT)
+        .open_subkey(ext)
+        .and_then(|key| key.get_value(""))
+        .ok()
 }

@@ -1,10 +1,10 @@
+use eframe::egui;
+
 use crate::core::installer::install;
 use crate::core::models::ApplicationEntry;
 use crate::package::Package;
 use crate::state::config::MIN_WINDOW_WIDTH;
-use crate::ui::messages::show_error_message;
-use crate::ui::messages::show_info_message;
-use eframe::egui;
+use crate::ui::dialogs::{show_error_message, show_info_message};
 
 pub struct App {
     pub archive: Box<dyn Package>,

@@ -1,9 +1,8 @@
-use crate::{
-    state::config::MIN_WINDOW_WIDTH,
-    state::install_state::InstallState,
-    ui::messages::{show_error_message, show_info_message},
-};
 use eframe::egui;
+
+use crate::state::config::MIN_WINDOW_WIDTH;
+use crate::state::install_state::InstallState;
+use crate::ui::dialogs::{show_error_message, show_info_message};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum Screen {
