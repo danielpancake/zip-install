@@ -1,5 +1,5 @@
-use eframe::NativeOptions;
 use eframe::egui::ViewportBuilder;
+use eframe::NativeOptions;
 
 pub const APP_TITLE: &str = "zip-install";
 pub const INSTALL_PATH: &str = "InstalledApps";

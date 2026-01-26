@@ -3,7 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
-use crate::archive::Archive;
+use crate::package::Package;
 use anyhow::Result;
 
 pub struct SingleExeHandler {
@@ -18,7 +18,7 @@ impl SingleExeHandler {
     }
 }
 
-impl Archive for SingleExeHandler {
+impl Package for SingleExeHandler {
     fn extract(&mut self, output_dir: &Path) -> Result<()> {
         // Create output directory if it doesn't exist
         fs::create_dir_all(output_dir)?;

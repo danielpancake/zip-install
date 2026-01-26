@@ -1,6 +1,6 @@
 use std::{fs::File, path::Path};
 
-use crate::archive::Archive;
+use crate::package::Package;
 use anyhow::Result;
 use zip::ZipArchive;
 
@@ -17,7 +17,7 @@ impl ZipArchiveHandler {
     }
 }
 
-impl Archive for ZipArchiveHandler {
+impl Package for ZipArchiveHandler {
     fn extract(&mut self, output_dir: &Path) -> Result<()> {
         self.zip.extract(output_dir)?;
         Ok(())

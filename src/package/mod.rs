@@ -2,9 +2,9 @@ use std::path::Path;
 
 use anyhow::Result;
 
-use crate::models::ApplicationEntry;
+use crate::core::models::ApplicationEntry;
 
-pub trait Archive {
+pub trait Package {
     fn candidates(&mut self) -> Vec<ApplicationEntry> {
         self.list()
             .into_iter()
@@ -28,7 +28,7 @@ pub trait Archive {
     fn list(&mut self) -> Vec<String>;
 }
 
-pub fn open_archive(path: &Path) -> Result<Box<dyn Archive>> {
+pub fn open_package(path: &Path) -> Result<Box<dyn Package>> {
     let extension = path
         .extension()
         .and_then(|e| e.to_str())

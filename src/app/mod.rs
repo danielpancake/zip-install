@@ -1,14 +1,13 @@
-use crate::{
-    archive::Archive,
-    config::MIN_WINDOW_WIDTH,
-    installer::install,
-    messages::{show_error_message, show_info_message},
-    models::ApplicationEntry,
-};
+use crate::core::installer::install;
+use crate::core::models::ApplicationEntry;
+use crate::package::Package;
+use crate::state::config::MIN_WINDOW_WIDTH;
+use crate::ui::messages::show_error_message;
+use crate::ui::messages::show_info_message;
 use eframe::egui;
 
 pub struct App {
-    pub archive: Box<dyn Archive>,
+    pub archive: Box<dyn Package>,
 
     pub executables: Vec<ApplicationEntry>,
     pub selected_index: usize,
@@ -18,7 +17,7 @@ pub struct App {
 }
 
 impl App {
-    pub fn new(mut archive: Box<dyn Archive>) -> Self {
+    pub fn new(mut archive: Box<dyn Package>) -> Self {
         let executables = archive.candidates();
 
         Self {

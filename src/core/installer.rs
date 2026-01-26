@@ -1,10 +1,13 @@
-use crate::{
-    archive::Archive, config::INSTALL_PATH, models::ApplicationEntry, shortcuts::create_shortcut,
-};
-use anyhow::{Context, Ok, Result};
+use crate::core::models::ApplicationEntry;
+use crate::package::Package;
+use crate::platform::shortcuts::create_shortcut;
+use crate::state::config::INSTALL_PATH;
+use anyhow::Context;
+use anyhow::Ok;
+use anyhow::Result;
 
 pub fn install(
-    archive: &mut dyn Archive,
+    archive: &mut dyn Package,
     application: ApplicationEntry,
     create_desktop_shortcut: bool,
     create_start_menu_shortcut: bool,
@@ -18,7 +21,7 @@ pub fn install(
 
     archive
         .extract(std::path::Path::new(&output_dir))
-        .context("Failed to extract archive")?;
+        .context("Failed to extract package")?;
 
     let src_path = output_dir.join(application.path);
 

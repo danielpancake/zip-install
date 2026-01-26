@@ -1,21 +1,18 @@
-// #![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 
 use crate::{
-    archive::open_archive,
-    config::{APP_TITLE, default_options},
-    messages::{show_error_message, show_warning_message},
-    self_install_app::SelfInstallApp,
+    package::open_package,
+    state::config::{default_options, APP_TITLE},
+    ui::messages::{show_error_message, show_warning_message},
+    ui::self_install_app::SelfInstallApp,
 };
 
 mod app;
-mod archive;
-mod config;
-mod install_state;
-mod installer;
-mod messages;
-mod models;
-mod self_install_app;
-mod shortcuts;
+mod core;
+mod package;
+mod platform;
+mod state;
+mod ui;
 
 fn self_install() {
     let app = SelfInstallApp::new();
@@ -31,10 +28,10 @@ fn self_install() {
 fn zip_install(arg: String) {
     let archive_path = std::path::Path::new(&arg);
 
-    let archive = match open_archive(archive_path) {
+    let archive = match open_package(archive_path) {
         Ok(archive) => archive,
         Err(err) => {
-            show_error_message(&format!("Failed to open archive: {}", err));
+            show_error_message(&format!("Failed to open package: {}", err));
             return;
         }
     };
@@ -42,7 +39,7 @@ fn zip_install(arg: String) {
     let app = app::App::new(archive);
 
     if app.executables.is_empty() {
-        show_warning_message("No executable files were found in the archive.");
+        show_warning_message("No executable files were found in the package.");
         return;
     }
 

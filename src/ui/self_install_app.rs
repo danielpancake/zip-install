@@ -1,7 +1,7 @@
 use crate::{
-    config::MIN_WINDOW_WIDTH,
-    install_state::InstallState,
-    messages::{show_error_message, show_info_message},
+    state::config::MIN_WINDOW_WIDTH,
+    state::install_state::InstallState,
+    ui::messages::{show_error_message, show_info_message},
 };
 use eframe::egui;
 

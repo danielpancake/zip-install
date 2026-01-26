@@ -1,6 +1,6 @@
 use anyhow::Result;
-use winreg::RegKey;
 use winreg::enums::*;
+use winreg::RegKey;
 
 pub struct ContextMenuConfig {
     pub menu_text: String,
