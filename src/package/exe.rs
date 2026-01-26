@@ -1,49 +1,44 @@
-use std::{
-    fs,
-    path::{Path, PathBuf},
-};
+use std::fs;
+use std::path::{Path, PathBuf};
 
-use crate::package::Package;
 use anyhow::Result;
 
-pub struct SingleExeHandler {
+use super::Package;
+
+pub struct StandaloneExecutable {
     path: PathBuf,
 }
 
-impl SingleExeHandler {
+impl StandaloneExecutable {
     pub fn open(path: &Path) -> Result<Self> {
-        Ok(Self {
-            path: path.to_path_buf(),
-        })
+        Ok(Self { path: path.into() })
     }
 }
 
-impl Package for SingleExeHandler {
-    fn extract(&mut self, output_dir: &Path) -> Result<()> {
-        // Create output directory if it doesn't exist
+impl Package for StandaloneExecutable {
+    fn extract(&mut self, output_dir: &Path) -> Result<PathBuf> {
         fs::create_dir_all(output_dir)?;
 
-        // Get the file name
         let file_name = self
             .path
             .file_name()
             .ok_or_else(|| anyhow::anyhow!("Invalid file path"))?;
 
-        // Copy the exe to the output directory
         let dest_path = output_dir.join(file_name);
         fs::copy(&self.path, &dest_path)?;
 
-        Ok(())
+        Ok(dest_path)
     }
 
-    fn list(&mut self) -> Vec<String> {
-        // Return just the file name
-        vec![
-            self.path
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or("")
-                .to_string(),
-        ]
+    fn is_executable(&self, path: &Path) -> bool {
+        true
+    }
+
+    fn list(&mut self) -> Vec<PathBuf> {
+        vec![self.path.clone()]
+    }
+
+    fn source(&self) -> &Path {
+        &self.path
     }
 }
