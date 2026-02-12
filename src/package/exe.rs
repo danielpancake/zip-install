@@ -34,7 +34,7 @@ impl Package for StandaloneExecutable {
         true
     }
 
-    fn list(&mut self) -> Vec<PathBuf> {
+    fn list(&self) -> Vec<PathBuf> {
         vec![self.path.clone()]
     }
 

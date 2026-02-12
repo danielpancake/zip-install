@@ -46,7 +46,7 @@ impl Package for ZipArchiveHandler {
             .unwrap_or(false)
     }
 
-    fn list(&mut self) -> Vec<PathBuf> {
+    fn list(&self) -> Vec<PathBuf> {
         self.zip.file_names().map(|name| name.into()).collect()
     }
 

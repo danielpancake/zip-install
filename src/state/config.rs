@@ -1,21 +1,31 @@
-use eframe::egui::ViewportBuilder;
-use eframe::NativeOptions;
+use anyhow::Result;
+use serde::{Deserialize, Serialize};
 
-pub const APP_TITLE: &str = "zip-install";
-pub const INSTALL_PATH: &str = "InstalledApps";
+use crate::state::paths;
+use crate::state::persistable::Persistable;
 
-pub const MIN_WINDOW_WIDTH: f32 = 240.0;
-pub const MIN_WINDOW_HEIGHT: f32 = 300.0;
+#[derive(Serialize, Deserialize)]
+pub struct Config {
+    pub is_installed: bool,
 
-pub fn default_options() -> NativeOptions {
-    NativeOptions {
-        viewport: ViewportBuilder::default()
-            .with_inner_size([MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT])
-            .with_resizable(false)
-            .with_maximize_button(false)
-            .with_minimize_button(false),
-        ..Default::default()
+    pub default_shortcut_desktop: bool,
+    pub default_shortcut_menu: bool,
+    pub default_remove_package: bool,
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Self {
+            is_installed: false,
+            default_shortcut_desktop: true,
+            default_shortcut_menu: true,
+            default_remove_package: false,
+        }
     }
+}
 
-    // TODO: spawn window somewhere near the mouse cursor
+impl Persistable for Config {
+    fn path() -> Result<std::path::PathBuf> {
+        paths::config_file()
+    }
 }

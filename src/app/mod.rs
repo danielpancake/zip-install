@@ -20,7 +20,7 @@ impl App {
         match action {
             ViewAction::Navigate(route) => {
                 self.view = match route {
-                    Route::ZipInstall(package) => Box::new(ZipInstallView::new(package)),
+                    Route::ZipInstall(package, config) => Box::new(ZipInstallView::new(package, config)),
                     _ => todo!(),
                 };
                 apply_viewport_builder(ctx, self.view.viewport());

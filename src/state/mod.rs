@@ -1,2 +1,4 @@
 pub mod config;
-pub mod install_state;
+pub mod index;
+pub mod paths;
+pub mod persistable;
