@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use winreg::RegKey;
 use winreg::enums::*;
+use winreg::RegKey;
 
 pub struct ContextMenuItem {
     pub label: String,
@@ -10,6 +10,7 @@ pub struct ContextMenuItem {
     pub executable_path: PathBuf,
     pub args: String,
 }
+
 impl ContextMenuItem {
     pub fn new(label: impl Into<String>, executable_path: impl Into<PathBuf>) -> Self {
         Self {
@@ -19,10 +20,12 @@ impl ContextMenuItem {
             args: "\"%1\"".into(),
         }
     }
+
     pub fn with_args(mut self, args: impl Into<String>) -> Self {
         self.args = args.into();
         self
     }
+
     pub fn with_icon_path(mut self, icon_path: impl Into<PathBuf>) -> Self {
         self.icon_path = Some(icon_path.into());
         self
@@ -34,12 +37,15 @@ pub fn add_context_menu(app_name: &str, item: &ContextMenuItem, extensions: &[&s
         let Some(progid) = get_progid(ext) else {
             continue;
         };
+
         let base = format!(r"Software\Classes\{progid}\shell\{app_name}");
         let (menu, _) = hkcu.create_subkey(&base)?;
         menu.set_value("", &item.label)?;
+
         if let Some(icon) = &item.icon_path {
             menu.set_value("Icon", &icon.as_os_str())?;
         }
+
         let (cmd, _) = hkcu.create_subkey(format!(r"{base}\command"))?;
         let command = format!(
             r#""{}" {}"#,
@@ -56,6 +62,7 @@ pub fn remove_context_menu(app_name: &str, extensions: &[&str]) -> Result<()> {
         let Some(progid) = get_progid(ext) else {
             continue;
         };
+
         let path = format!(r"Software\Classes\{progid}\shell");
         if let Ok(key) = hkcu.open_subkey_with_flags(&path, KEY_WRITE) {
             let _ = key.delete_subkey_all(app_name);

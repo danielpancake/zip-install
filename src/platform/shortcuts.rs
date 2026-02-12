@@ -8,10 +8,12 @@ pub fn create_shortcut(src: &Path, dest: &Path) -> Result<()> {
     shell_link.create_lnk(dest.with_extension("lnk"))?;
     Ok(())
 }
+
 #[cfg(target_os = "macos")]
 pub fn create_shortcut(_src: &str, _dest: &str) -> Result<()> {
     Err(anyhow::anyhow!("Not implemented yet for macOS"))
 }
+
 #[cfg(target_os = "linux")]
 pub fn create_shortcut(_src: &str, _dest: &str) -> Result<()> {
     Err(anyhow::anyhow!("Not implemented yet for Linux"))

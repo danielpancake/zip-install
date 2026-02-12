@@ -17,4 +17,5 @@ pub fn apply_viewport_builder(ctx: &Context, builder: ViewportBuilder) {
     apply_viewport_field(ctx, builder.fullscreen, Fullscreen);
     apply_viewport_field(ctx, builder.maximized, Maximized);
     apply_viewport_field(ctx, builder.resizable, Resizable);
+    // ..add more when/if needed
 }

@@ -1,7 +1,6 @@
+use anyhow::{Context, Result};
 use std::path::Path;
 use std::process::{Child, Command};
-
-use anyhow::{Context, Result};
 
 #[cfg(target_os = "windows")]
 pub fn open_file_explorer(path: &Path) -> Result<Child> {
@@ -10,7 +9,13 @@ pub fn open_file_explorer(path: &Path) -> Result<Child> {
         .spawn()
         .context("Failed to open file explorer")
 }
+
 #[cfg(target_os = "macos")]
-pub fn open_file_explorer(path: &Path) {}
+pub fn open_file_explorer(path: &Path) {
+    todo!()
+}
+
 #[cfg(target_os = "linux")]
-pub fn open_file_explorer(path: &Path) {}
+pub fn open_file_explorer(path: &Path) {
+    todo!()
+}

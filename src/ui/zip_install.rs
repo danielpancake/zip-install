@@ -1,5 +1,5 @@
-use crate::core::models::ApplicationEntry;
-use crate::package::Package;
+use crate::package::{PackageEntry, Package};
+use crate::state::config::Config;
 use crate::ui::View;
 use crate::ui::dialogs::{show_error_message, show_info_message};
 use crate::{app::routing::ViewAction, core::installer::install};
@@ -9,7 +9,7 @@ use eframe::egui::{Button, ComboBox, RichText, Ui, ViewportBuilder};
 pub struct ZipInstallView {
     pub package: Box<dyn Package>,
 
-    candidates: Vec<ApplicationEntry>,
+    candidates: Vec<PackageEntry>,
     candidates_index: usize,
 
     checkbox_shortcut_desktop: bool,
@@ -18,19 +18,17 @@ pub struct ZipInstallView {
 }
 
 impl ZipInstallView {
-    pub fn new(package: Box<dyn Package>) -> Self {
+    pub fn new(package: Box<dyn Package>, config: Config) -> Self {
         let candidates = package.candidates();
 
         Self {
             package,
             candidates,
-
             candidates_index: 0,
 
-            // TODO: move defaults to app config
-            checkbox_shortcut_desktop: true,
-            checkbox_shortcut_menu: true,
-            checkbox_remove_package: false,
+            checkbox_shortcut_desktop: config.default_shortcut_desktop,
+            checkbox_shortcut_menu: config.default_shortcut_menu,
+            checkbox_remove_package: config.default_remove_package,
         }
     }
 }
