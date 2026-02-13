@@ -16,10 +16,7 @@ impl ZipArchiveHandler {
         let file = File::open(path)?;
         let zip = ZipArchive::new(file)?;
 
-        Ok(Self {
-            path: path.into(),
-            zip,
-        })
+        Ok(Self { path: path.into(), zip })
     }
 }
 impl Package for ZipArchiveHandler {
@@ -47,7 +44,11 @@ impl Package for ZipArchiveHandler {
     }
 
     fn list(&self) -> Vec<PathBuf> {
-        self.zip.file_names().map(|name| name.into()).collect()
+        self.zip
+            .file_names()
+            .filter(|e: &&str| !e.ends_with('/'))
+            .map(|e| e.into())
+            .collect()
     }
 
     fn source(&self) -> &Path {

@@ -30,7 +30,7 @@ impl Package for StandaloneExecutable {
         Ok(dest_path)
     }
 
-    fn is_executable(&self, path: &Path) -> bool {
+    fn is_executable(&self, _path: &Path) -> bool {
         true
     }
 
