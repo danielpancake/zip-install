@@ -1,8 +1,8 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use winreg::enums::*;
 use winreg::RegKey;
+use winreg::enums::*;
 
 pub struct ContextMenuItem {
     pub label: String,
@@ -47,11 +47,7 @@ pub fn add_context_menu(app_name: &str, item: &ContextMenuItem, extensions: &[&s
         }
 
         let (cmd, _) = hkcu.create_subkey(format!(r"{base}\command"))?;
-        let command = format!(
-            r#""{}" {}"#,
-            item.executable_path.to_string_lossy(),
-            item.args
-        );
+        let command = format!(r#""{}" {}"#, item.executable_path.to_string_lossy(), item.args);
         cmd.set_value("", &command)?;
     }
     Ok(())

@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use anyhow::{Context, Result};
-use serde::{Serialize, de::DeserializeOwned};
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 
 pub trait Persistable: Default + Serialize + DeserializeOwned {
     fn path() -> Result<PathBuf>;
