@@ -18,7 +18,7 @@ pub const EXE_NAME: &str = "zip-install.exe";
 #[cfg(target_os = "linux")]
 pub const EXE_NAME: &str = "zip-install";
 
-pub fn self_install() -> Result<()> {
+pub fn setup() -> Result<()> {
     let packages_dir = paths::packages_dir()?;
     fs::create_dir_all(&packages_dir).context("Failed to create packages directory")?;
 
@@ -40,17 +40,28 @@ pub fn self_install() -> Result<()> {
     index.save()?;
 
     let mut config = Config::load().unwrap_or_default();
-    config.is_installed = true;
+    config.self_uuid = Some(uuid);
     config.save()?;
 
     Ok(())
 }
 
-pub fn self_uninstall() -> Result<()> {
+pub fn uninstall() -> Result<()> {
     context_menu::remove_context_menu(APP_NAME, EXTENSIONS)?;
 
     let mut config = Config::load().unwrap_or_default();
-    config.is_installed = false;
+
+    if let Some(uuid) = config.self_uuid.take() {
+        let package_dir = paths::packages_dir()?.join(&uuid);
+        if package_dir.exists() {
+            fs::remove_dir_all(&package_dir).context("Failed to remove package directory")?;
+        }
+
+        let mut index = InstallIndex::load().unwrap_or_default();
+        index.remove_entry(&uuid);
+        index.save()?;
+    }
+
     config.save()?;
 
     Ok(())

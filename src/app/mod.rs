@@ -3,6 +3,7 @@ pub mod state;
 
 use crate::app::routing::{Route, ViewAction};
 use crate::app::state::AppData;
+use crate::state::config::Config;
 use crate::state::index::{InstallIndex, InstalledApp};
 use crate::state::persistable::Persistable;
 use crate::ui::View;
@@ -33,7 +34,10 @@ impl App {
 
     fn create_view(&self, route: &Route) -> Box<dyn View> {
         match route {
-            Route::Setup => Box::new(SetupView::new(self.data.is_installed)),
+            Route::Setup => {
+                let config = Config::load().unwrap_or_default();
+                Box::new(SetupView::new(config.is_installed()))
+            }
 
             Route::Install => {
                 let index = InstallIndex::load().unwrap_or_default();
@@ -54,9 +58,7 @@ impl App {
                     })
                     .collect();
                 Box::new(ManualUpdateView::new(all_packages))
-            }
-
-            Route::AppList => todo!(),
+            } // Route::AppList => todo!(),
         }
     }
 

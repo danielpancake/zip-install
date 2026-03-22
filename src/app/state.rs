@@ -5,7 +5,6 @@ pub struct AppData {
     pub package: Option<Box<dyn Package>>,
     pub shared: SharedState,
     pub candidates: Vec<Candidate>,
-    pub is_installed: bool,
 }
 
 pub struct SharedState {

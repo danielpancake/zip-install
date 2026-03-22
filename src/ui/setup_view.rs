@@ -75,7 +75,7 @@ impl View for SetupView {
                         .add_sized([width, BTN_MAIN_HEIGHT], Button::new("Reinstall"))
                         .clicked()
                     {
-                        match bootstrap::self_install() {
+                        match bootstrap::setup() {
                             Ok(()) => {
                                 show_info_message("zip-install has been reinstalled.");
                                 action(ViewAction::Close);
@@ -92,7 +92,7 @@ impl View for SetupView {
                         .add_sized([width, BTN_MAIN_HEIGHT], Button::new("Uninstall"))
                         .clicked()
                     {
-                        match bootstrap::self_uninstall() {
+                        match bootstrap::uninstall() {
                             Ok(()) => {
                                 self.is_installed = false;
                                 show_info_message("zip-install has been uninstalled.");
@@ -115,7 +115,7 @@ impl View for SetupView {
                     ui.add_space(SECTION_SPACING);
 
                     if ui.add_sized([width, BTN_MAIN_HEIGHT], Button::new("Install")).clicked() {
-                        match bootstrap::self_install() {
+                        match bootstrap::setup() {
                             Ok(()) => {
                                 self.is_installed = true;
                                 show_info_message("zip-install has been installed successfully.");
