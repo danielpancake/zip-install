@@ -10,23 +10,33 @@ pub fn install(
     create_desktop_shortcut: bool,
     create_start_menu_shortcut: bool,
 ) -> Result<String> {
-    // TODO: this is bad, better management
     let uuid = uuid::Uuid::new_v4().to_string();
+
     let output_dir = packages_dir()?.join(&uuid);
+    let src_path = output_dir.join(&application.relative_path);
 
     archive
         .extract(output_dir.as_path())
         .context("Failed to extract package")?;
 
-    let src_path = output_dir.join(&application.relative_path);
     if create_desktop_shortcut {
         let desktop_dir = dirs::desktop_dir().context("Failed to get desktop directory")?;
-        let dest_path = desktop_dir.join(format!("{}.lnk", application.file_name));
-        // TODO: .lnk is windows specific
+        let dest_path = desktop_dir.join(&application.file_name);
+
         create_shortcut(src_path.as_path(), dest_path.as_path()).context("Failed to create desktop shortcut")?;
     }
 
-    // if create_start_menu_shortcut {}
+    if create_start_menu_shortcut {
+        let start_menu_dir = dirs::data_dir()
+            .context("Failed to get data directory")?
+            .join("Microsoft")
+            .join("Windows")
+            .join("Start Menu")
+            .join("Programs");
+        let dest_path = start_menu_dir.join(&application.file_name);
+
+        create_shortcut(src_path.as_path(), dest_path.as_path()).context("Failed to create Start Menu shortcut")?;
+    }
 
     Ok(uuid)
 }

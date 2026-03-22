@@ -17,7 +17,7 @@ impl Fingerprint {
             .iter()
             .map(|e| Self::normalize_path(&e.to_string_lossy()))
             .collect();
-        let candidates = package.candidates().iter().map(|e| e.base_name.clone()).collect();
+        let candidates = package.candidates().iter().map(|e| e.app_name.clone()).collect();
 
         Ok(Self { files, candidates })
     }
@@ -35,7 +35,8 @@ impl Fingerprint {
     }
 
     fn normalize_path(path: &str) -> String {
-        path.split('/')
+        path.replace('\\', "/")
+            .split('/')
             .map(|component| crate::package::strip_version(Path::new(component)))
             .collect::<Vec<_>>()
             .join("/")

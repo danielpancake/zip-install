@@ -11,8 +11,8 @@ use crate::state::persistable::Persistable;
 
 #[derive(Clone, Serialize, Deserialize)]
 pub struct InstalledApp {
+    pub app_name: String,
     pub file_name: String,
-    pub base_name: String,
     pub main_path: String,
     pub installed_at: String,
 }
@@ -20,8 +20,8 @@ pub struct InstalledApp {
 impl From<&Candidate> for InstalledApp {
     fn from(candidate: &Candidate) -> Self {
         Self {
+            app_name: candidate.app_name.clone(),
             file_name: candidate.file_name.clone(),
-            base_name: candidate.base_name.clone(),
             main_path: candidate.relative_path.to_string_lossy().into_owned(),
             installed_at: chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string(),
         }
@@ -84,6 +84,11 @@ impl AppMatcher {
             .iter()
             .map(|(path, fp)| (path.clone(), fp.similarity(archive_fingerprint)))
             .filter(|(_, score)| *score >= threshold)
-            .max_by(|(_, score1), (_, score2)| score1.partial_cmp(score2).unwrap_or(std::cmp::Ordering::Equal))
+            .max_by(|(path1, score1), (path2, score2)| {
+                score1
+                    .partial_cmp(score2)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+                    .then_with(|| path1.cmp(path2))
+            })
     }
 }
