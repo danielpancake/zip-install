@@ -10,8 +10,13 @@ use crate::state::persistable::Persistable;
 
 pub const EXTENSIONS: &[&str] = &[".zip", ".exe"]; // ".7z", ".rar"
 pub const APP_NAME: &str = "ZipInstall";
-const MENU_LABEL: &str = "Install with zip-install";
+pub const MENU_LABEL: &str = "Install with zip-install";
+
+#[cfg(target_os = "windows")]
 pub const EXE_NAME: &str = "zip-install.exe";
+
+#[cfg(target_os = "linux")]
+pub const EXE_NAME: &str = "zip-install";
 
 pub fn self_install() -> Result<()> {
     let packages_dir = paths::packages_dir()?;

@@ -37,7 +37,7 @@ impl From<PathBuf> for Candidate {
     }
 }
 
-fn disambiguate_candidates(candidates: &mut Vec<Candidate>) {
+fn disambiguate_candidates(candidates: &mut [Candidate]) {
     let mut counts = std::collections::HashMap::new();
     for c in candidates.iter() {
         *counts.entry(c.file_name.clone()).or_insert(0usize) += 1;
@@ -48,7 +48,7 @@ fn disambiguate_candidates(candidates: &mut Vec<Candidate>) {
             if let Some(parent) = c.relative_path.parent() {
                 let folder = parent
                     .components()
-                    .last()
+                    .next_back()
                     .map(|comp| comp.as_os_str().to_string_lossy().into_owned())
                     .unwrap_or_default();
 

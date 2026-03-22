@@ -25,3 +25,21 @@ pub fn config_file() -> Result<PathBuf> {
     let app_dir = app_dir()?;
     Ok(app_dir.join(CONFIG_FILE))
 }
+
+#[cfg(target_os = "windows")]
+pub fn applications_dir() -> Result<PathBuf> {
+    let data_dir = dirs::data_dir().context("Failed to get data directory")?;
+    Ok(data_dir
+        .join("Microsoft")
+        .join("Windows")
+        .join("Start Menu")
+        .join("Programs"))
+}
+
+#[cfg(target_os = "linux")]
+pub fn applications_dir() -> Result<PathBuf> {
+    let applications_dir = dirs::data_dir()
+        .context("Failed to get data directory")?
+        .join("applications");
+    Ok(applications_dir)
+}

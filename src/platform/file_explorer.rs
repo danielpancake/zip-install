@@ -10,12 +10,10 @@ pub fn open_file_explorer(path: &Path) -> Result<Child> {
         .context("Failed to open file explorer")
 }
 
-#[cfg(target_os = "macos")]
-pub fn open_file_explorer(path: &Path) {
-    todo!()
-}
-
 #[cfg(target_os = "linux")]
-pub fn open_file_explorer(path: &Path) {
-    todo!()
+pub fn open_file_explorer(path: &Path) -> Result<Child> {
+    Command::new("xdg-open")
+        .arg(path)
+        .spawn()
+        .context("Failed to open file manager")
 }

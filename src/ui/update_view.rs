@@ -5,7 +5,7 @@ use crate::state::index::{InstallIndex, InstalledApp};
 use crate::state::persistable::Persistable;
 use crate::ui::View;
 use crate::ui::constants::*;
-use crate::ui::dialogs::{show_error_message, show_info_message};
+use crate::ui::dialogs::{show_error_message, show_info_message, show_warning_message};
 
 use eframe::egui::{Align, Button, Layout, RichText, Ui, ViewportBuilder};
 
@@ -45,14 +45,16 @@ impl View for UpdateView {
                 ui.add_space(SECTION_SPACING);
 
                 ui.checkbox(&mut data.shared.checkbox_shortcut_desktop, "Create Desktop shortcut");
-                ui.checkbox(&mut data.shared.checkbox_shortcut_menu, "Add to Start Menu");
+                ui.checkbox(&mut data.shared.checkbox_shortcut_menu, LABEL_APP_LAUNCHER);
                 ui.checkbox(&mut data.shared.checkbox_remove_package, "Remove after install");
 
                 ui.add_space(SECTION_SPACING);
 
                 if ui.add_sized([width, BTN_MAIN_HEIGHT], Button::new("Update")).clicked() {
-                    if let Some(package) = data.package.as_mut() {
-                        let candidate = data.candidates[data.shared.candidates_index].clone();
+                    if let (Some(package), Some(candidate)) = (
+                        data.package.as_mut(),
+                        data.candidates.get(data.shared.candidates_index).cloned(),
+                    ) {
                         match update(
                             package.as_mut(),
                             candidate.clone(),
@@ -63,10 +65,14 @@ impl View for UpdateView {
                             Ok(()) => {
                                 let mut index = InstallIndex::load().unwrap_or_default();
                                 index.add_entry(&self.target.uuid, InstalledApp::from(&candidate));
-                                index.save().unwrap();
+                                if let Err(e) = index.save() {
+                                    show_error_message(&format!("Failed to save index: {}", e));
+                                }
                                 if data.shared.checkbox_remove_package {
                                     if let Some(pkg) = data.package.as_ref() {
-                                        let _ = std::fs::remove_file(pkg.source());
+                                        if let Err(e) = std::fs::remove_file(pkg.source()) {
+                                            show_warning_message(&format!("Failed to remove package: {}", e));
+                                        }
                                     }
                                 }
                                 show_info_message("Application updated successfully.");

@@ -9,3 +9,8 @@ pub const PADDING_RATIO: f32 = 0.85;
 
 pub const LABEL_SPACING: f32 = 6.0;
 pub const SECTION_SPACING: f32 = 8.0;
+
+#[cfg(target_os = "windows")]
+pub const LABEL_APP_LAUNCHER: &str = "Add to Start Menu";
+#[cfg(target_os = "linux")]
+pub const LABEL_APP_LAUNCHER: &str = "Add to app launcher";
