@@ -66,3 +66,9 @@ pub fn uninstall() -> Result<()> {
 
     Ok(())
 }
+
+pub fn reinstall() -> Result<()> {
+    uninstall().context("Failed to uninstall existing installation")?;
+    setup().context("Failed to set up new installation")?;
+    Ok(())
+}

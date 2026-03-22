@@ -2,9 +2,9 @@ use crate::app::routing::ViewAction;
 use crate::app::state::AppData;
 use crate::core::bootstrap;
 use crate::state::paths;
-use crate::ui::View;
 use crate::ui::constants::*;
 use crate::ui::dialogs::{show_error_message, show_info_message};
+use crate::ui::View;
 
 use eframe::egui::{
     Align, Button, ColorImage, Image, Layout, RichText, TextureHandle, TextureOptions, Ui, Vec2, ViewportBuilder,
@@ -75,10 +75,9 @@ impl View for SetupView {
                         .add_sized([width, BTN_MAIN_HEIGHT], Button::new("Reinstall"))
                         .clicked()
                     {
-                        match bootstrap::setup() {
+                        match bootstrap::reinstall() {
                             Ok(()) => {
                                 show_info_message("zip-install has been reinstalled.");
-                                action(ViewAction::Close);
                             }
                             Err(e) => {
                                 show_error_message(&format!("Reinstall failed: {}", e));
