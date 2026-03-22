@@ -1,4 +1,4 @@
-// #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
+#![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 mod app;
 mod core;
@@ -8,16 +8,16 @@ mod state;
 mod ui;
 
 use crate::app::App;
-use crate::app::routing::SharedState;
-use crate::core::fingerprint::Fingerprint;
+use crate::app::routing::Route;
+use crate::app::state::{AppData, SharedState};
 use crate::package::open_package;
 use crate::state::config::Config;
-use crate::state::index::{AppMatcher, InstallIndex};
-use crate::state::paths;
+use crate::state::index::InstallIndex;
 use crate::state::persistable::Persistable;
 use crate::ui::View;
 use crate::ui::dialogs::show_error_message;
 use crate::ui::install_view::InstallView;
+use crate::ui::setup_view::SetupView;
 use crate::ui::update_view::UpdateView;
 
 use eframe::NativeOptions;
@@ -25,8 +25,18 @@ use eframe::NativeOptions;
 fn main() -> eframe::Result<()> {
     let config = Config::load().unwrap_or_default();
 
-    let app = match std::env::args().nth(1) {
-        None => todo!(),
+    let (data, route, view): (AppData, Route, Box<dyn View>) = match std::env::args().nth(1) {
+        None => {
+            let data = AppData {
+                package: None,
+                shared: SharedState::from_config(&config),
+                candidates: vec![],
+                is_installed: config.is_installed,
+            };
+
+            let view = Box::new(SetupView::new(config.is_installed));
+            (data, Route::Setup, view)
+        }
 
         Some(arg) => {
             let archive_path = std::path::Path::new(&arg);
@@ -39,48 +49,41 @@ fn main() -> eframe::Result<()> {
                 }
             };
 
-            let shared = SharedState::from_config(&config);
+            let detected_target = core::detect_update(package.as_ref(), &config);
+            let candidates = package.candidates();
 
             let index = InstallIndex::load().unwrap_or_default();
             let has_installed_apps = !index.entries.is_empty();
 
-            let view: Box<dyn View> = match detect_update(package.as_ref(), &config) {
-                Some(target) => Box::new(UpdateView::new(target)),
-                None => Box::new(InstallView::new(has_installed_apps)),
+            let data = AppData {
+                package: Some(package),
+                shared: SharedState::from_config(&config),
+                candidates,
+                is_installed: config.is_installed,
             };
 
-            App::new(package, shared, view)
+            let (route, view): (Route, Box<dyn View>) = match detected_target {
+                Some(target) => (Route::Update(target.clone()), Box::new(UpdateView::new(target))),
+                None => (Route::Install, Box::new(InstallView::new(has_installed_apps))),
+            };
+
+            (data, route, view)
         }
     };
+
+    let app = App::new(data, route, view);
+
+    let mut viewport = app.viewport();
+    if let Ok(icon) = eframe::icon_data::from_png_bytes(include_bytes!("../assets/icon.png")) {
+        viewport = viewport.with_icon(std::sync::Arc::new(icon));
+    }
 
     eframe::run_native(
         "zip-install",
         NativeOptions {
-            viewport: app.viewport(),
+            viewport,
             ..Default::default()
         },
         Box::new(|_| Ok(Box::new(app))),
     )
-}
-
-fn detect_update(package: &dyn crate::package::Package, config: &Config) -> Option<crate::state::index::InstalledApp> {
-    let fingerprint = Fingerprint::from_package(package).ok()?;
-    eprintln!("[debug] archive fingerprint: {:?}", fingerprint);
-
-    let packages_dir = paths::packages_dir().ok()?;
-    let mut matcher = AppMatcher::new();
-    matcher.scan_installations(packages_dir.as_path()).ok()?;
-
-    for (path, fp) in &matcher.known_apps {
-        let score = fp.similarity(&fingerprint);
-        eprintln!("[debug] installed {:?} score={:.4} fingerprint={:?}", path, score, fp);
-    }
-
-    let (path, score) = matcher.find_match(&fingerprint, config.match_threshold)?;
-    eprintln!("[debug] best match: {:?} score={:.4}", path, score);
-
-    let uuid = path.file_name()?.to_string_lossy().into_owned();
-    let index = InstallIndex::load().unwrap_or_default();
-
-    index.entries.get(&uuid).cloned()
 }

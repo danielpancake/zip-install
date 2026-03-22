@@ -1,4 +1,5 @@
-use crate::app::routing::{Route, ViewAction, ViewContext};
+use crate::app::routing::{Route, ViewAction};
+use crate::app::state::AppData;
 use crate::core::installer::install;
 use crate::state::index::{InstallIndex, InstalledApp};
 use crate::state::persistable::Persistable;
@@ -28,7 +29,7 @@ impl View for InstallView {
             .with_minimize_button(false)
     }
 
-    fn ui(&mut self, ui: &mut Ui, ctx: &mut ViewContext, action: &mut dyn FnMut(ViewAction)) {
+    fn ui(&mut self, ui: &mut Ui, data: &mut AppData, action: &mut dyn FnMut(ViewAction)) {
         let outer_width = ui.available_width();
 
         ui.with_layout(Layout::top_down(Align::Center), |ui| {
@@ -43,37 +44,45 @@ impl View for InstallView {
 
                 ComboBox::from_id_salt("install_exe")
                     .width(width)
-                    .selected_text(&ctx.candidates[ctx.shared.candidates_index].display_name)
+                    .selected_text(&data.candidates[data.shared.candidates_index].display_name)
                     .show_ui(ui, |ui| {
-                        for (i, exe) in ctx.candidates.iter().enumerate() {
-                            ui.selectable_value(&mut ctx.shared.candidates_index, i, &exe.display_name);
+                        for (i, exe) in data.candidates.iter().enumerate() {
+                            ui.selectable_value(&mut data.shared.candidates_index, i, &exe.display_name);
                         }
                     });
 
                 ui.add_space(SECTION_SPACING);
 
-                ui.checkbox(&mut ctx.shared.checkbox_shortcut_desktop, "Create Desktop shortcut");
-                ui.checkbox(&mut ctx.shared.checkbox_shortcut_menu, "Add to Start Menu");
-                ui.checkbox(&mut ctx.shared.checkbox_remove_package, "Remove after install");
+                ui.checkbox(&mut data.shared.checkbox_shortcut_desktop, "Create Desktop shortcut");
+                ui.checkbox(&mut data.shared.checkbox_shortcut_menu, "Add to Start Menu");
+                ui.checkbox(&mut data.shared.checkbox_remove_package, "Remove after install");
 
                 ui.add_space(SECTION_SPACING);
 
                 if ui.add_sized([width, BTN_MAIN_HEIGHT], Button::new("Install")).clicked() {
-                    match install(
-                        ctx.package,
-                        ctx.candidates[ctx.shared.candidates_index].clone(),
-                        ctx.shared.checkbox_shortcut_desktop,
-                        ctx.shared.checkbox_shortcut_menu,
-                    ) {
-                        Ok(uuid) => {
-                            let mut index = InstallIndex::load().unwrap_or_default();
-                            index.add_entry(&uuid, InstalledApp::from(&ctx.candidates[ctx.shared.candidates_index]));
-                            index.save().unwrap();
-                            show_info_message("Application installed successfully.");
-                            action(ViewAction::Close);
-                        }
-                        Err(e) => {
-                            show_error_message(&format!("Failed to install! {}", e));
+                    if let Some(package) = data.package.as_mut() {
+                        let candidate = data.candidates[data.shared.candidates_index].clone();
+                        match install(
+                            package.as_mut(),
+                            candidate.clone(),
+                            data.shared.checkbox_shortcut_desktop,
+                            data.shared.checkbox_shortcut_menu,
+                        ) {
+                            Ok(uuid) => {
+                                let mut index = InstallIndex::load().unwrap_or_default();
+                                index.add_entry(&uuid, InstalledApp::from(&candidate));
+                                index.save().unwrap();
+                                if data.shared.checkbox_remove_package {
+                                    if let Some(pkg) = data.package.as_ref() {
+                                        let _ = std::fs::remove_file(pkg.source());
+                                    }
+                                }
+                                show_info_message("Application installed successfully.");
+                                action(ViewAction::Close);
+                            }
+                            Err(e) => {
+                                show_error_message(&format!("Failed to install! {}", e));
+                            }
                         }
                     }
                 }
