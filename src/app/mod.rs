@@ -2,8 +2,10 @@ pub mod routing;
 
 use crate::app::routing::{Route, ViewAction};
 use crate::ui::View;
+use crate::ui::install_view::InstallView;
+use crate::ui::manual_update_view::ManualUpdateView;
+use crate::ui::update_view::UpdateView;
 use crate::ui::viewport::apply_viewport_builder;
-use crate::ui::zip_install::ZipInstallView;
 
 use eframe::egui;
 
@@ -20,7 +22,9 @@ impl App {
         match action {
             ViewAction::Navigate(route) => {
                 self.view = match route {
-                    Route::ZipInstall(package, config) => Box::new(ZipInstallView::new(package, config)),
+                    Route::Install(pkg, shared) => Box::new(InstallView::new(pkg, shared)),
+                    Route::Update(pkg, target, shared) => Box::new(UpdateView::new(pkg, target, shared)),
+                    Route::ManualUpdate(pkg, shared) => Box::new(ManualUpdateView::new(pkg, shared)),
                     _ => todo!(),
                 };
                 apply_viewport_builder(ctx, self.view.viewport());

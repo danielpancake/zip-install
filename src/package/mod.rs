@@ -77,7 +77,7 @@ pub fn strip_version(path: &Path) -> String {
     static VERSION_REGEX: OnceLock<Regex> = OnceLock::new();
 
     let re = VERSION_REGEX.get_or_init(|| {
-        Regex::new(r"[-_]?v?\d+([.-]\d+)*[-_]?(x64|x86|win64|win32)?$").expect("Invalid regex pattern")
+        Regex::new(r"[-_]?v?\d+([.-]\d+)*[-_]?(x64|x86|win64|win32|.exe)?$").expect("Invalid regex pattern")
     });
 
     let name = path.file_name().unwrap_or(path.as_os_str()).to_string_lossy();

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 use crate::state::paths;
 use crate::state::persistable::Persistable;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Clone, Serialize, Deserialize)]
 pub struct Config {
     pub is_installed: bool,
 
