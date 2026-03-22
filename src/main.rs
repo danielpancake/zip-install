@@ -15,7 +15,7 @@ use crate::state::config::Config;
 use crate::state::index::InstallIndex;
 use crate::state::persistable::Persistable;
 use crate::ui::View;
-use crate::ui::dialogs::show_error_message;
+use crate::ui::dialogs::{show_error_message, show_warning_message};
 use crate::ui::install_view::InstallView;
 use crate::ui::setup_view::SetupView;
 use crate::ui::update_view::UpdateView;
@@ -31,10 +31,9 @@ fn main() -> eframe::Result<()> {
                 package: None,
                 shared: SharedState::from_config(&config),
                 candidates: vec![],
-                is_installed: config.is_installed,
             };
 
-            let view = Box::new(SetupView::new(config.is_installed));
+            let view = Box::new(SetupView::new(config.is_installed()));
             (data, Route::Setup, view)
         }
 
@@ -48,18 +47,22 @@ fn main() -> eframe::Result<()> {
                     return Ok(());
                 }
             };
-
-            let detected_target = core::detect_update(package.as_ref(), &config);
             let candidates = package.candidates();
+
+            if candidates.is_empty() {
+                show_warning_message("No valid candidates found in the archive.");
+                return Ok(());
+            }
 
             let index = InstallIndex::load().unwrap_or_default();
             let has_installed_apps = !index.entries.is_empty();
+
+            let detected_target = core::detect_update(package.as_ref(), &config);
 
             let data = AppData {
                 package: Some(package),
                 shared: SharedState::from_config(&config),
                 candidates,
-                is_installed: config.is_installed,
             };
 
             let (route, view): (Route, Box<dyn View>) = match detected_target {
