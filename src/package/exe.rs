@@ -35,7 +35,8 @@ impl Package for StandaloneExecutable {
     }
 
     fn list(&self) -> Vec<PathBuf> {
-        vec![self.path.clone()]
+        let file_name = self.path.file_name().map(PathBuf::from).unwrap_or_default();
+        vec![file_name]
     }
 
     fn source(&self) -> &Path {
