@@ -1,4 +1,4 @@
-pub const WINDOW_WIDTH: f32 = 240.0;
+pub const WINDOW_WIDTH: f32 = 260.0;
 // pub const WINDOW_HEIGHT: f32 = 240.0;
 
 pub const BTN_MAIN_HEIGHT: f32 = 36.0;

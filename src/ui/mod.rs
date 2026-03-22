@@ -1,6 +1,6 @@
 use eframe::egui;
 
-use crate::app::routing::ViewAction;
+use crate::app::routing::{ViewAction, ViewContext};
 
 pub mod constants;
 pub mod dialogs;
@@ -11,5 +11,5 @@ pub mod viewport;
 
 pub trait View {
     fn viewport(&self) -> egui::ViewportBuilder;
-    fn ui(&mut self, ui: &mut egui::Ui, action: &mut dyn FnMut(ViewAction));
+    fn ui(&mut self, ui: &mut egui::Ui, ctx: &mut ViewContext, action: &mut dyn FnMut(ViewAction));
 }

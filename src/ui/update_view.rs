@@ -1,5 +1,4 @@
-use crate::app::routing::{Route, SharedState, ViewAction};
-use crate::package::Package;
+use crate::app::routing::{Route, ViewAction, ViewContext};
 use crate::state::index::InstalledApp;
 use crate::ui::View;
 use crate::ui::constants::*;
@@ -7,32 +6,26 @@ use crate::ui::constants::*;
 use eframe::egui::{Align, Button, Layout, RichText, Ui, ViewportBuilder};
 
 pub struct UpdateView {
-    package: Option<Box<dyn Package>>,
     target: InstalledApp,
-
-    shared: SharedState,
 }
 
 impl UpdateView {
-    pub fn new(package: Box<dyn Package>, target: InstalledApp, shared: SharedState) -> Self {
-        Self {
-            package: Some(package),
-            target,
-            shared,
-        }
+    pub fn new(target: InstalledApp) -> Self {
+        Self { target }
     }
 }
 
 impl View for UpdateView {
     fn viewport(&self) -> ViewportBuilder {
         ViewportBuilder::default()
+            .with_title("zip-install — Update")
             .with_resizable(false)
-            .with_inner_size([WINDOW_WIDTH, 320.0])
+            .with_inner_size([WINDOW_WIDTH, 260.0])
             .with_maximize_button(false)
             .with_minimize_button(false)
     }
 
-    fn ui(&mut self, ui: &mut Ui, action: &mut dyn FnMut(ViewAction)) {
+    fn ui(&mut self, ui: &mut Ui, ctx: &mut ViewContext, action: &mut dyn FnMut(ViewAction)) {
         let outer_width = ui.available_width();
 
         ui.with_layout(Layout::top_down(Align::Center), |ui| {
@@ -43,29 +36,37 @@ impl View for UpdateView {
                 let width = ui.available_width();
 
                 ui.label(RichText::new("Update detected for:"));
-                ui.label(RichText::new(&self.target.base_name).strong());
+                ui.label(RichText::new(&self.target.app_name).strong());
 
                 ui.add_space(SECTION_SPACING);
 
-                ui.checkbox(&mut self.shared.checkbox_shortcut_desktop, "Create Desktop shortcut");
-                ui.checkbox(&mut self.shared.checkbox_shortcut_menu, "Add to Start Menu");
-                ui.checkbox(&mut self.shared.checkbox_remove_package, "Remove after install");
+                ui.checkbox(&mut ctx.shared.checkbox_shortcut_desktop, "Create Desktop shortcut");
+                ui.checkbox(&mut ctx.shared.checkbox_shortcut_menu, "Add to Start Menu");
+                ui.checkbox(&mut ctx.shared.checkbox_remove_package, "Remove after install");
 
                 ui.add_space(SECTION_SPACING);
 
                 if ui.add_sized([width, BTN_MAIN_HEIGHT], Button::new("Update")).clicked() {
                     // TODO: implement update logic (extract to existing directory)
+                    action(ViewAction::Close);
                 }
 
                 ui.add_space(SECTION_SPACING);
 
                 if ui
-                    .add_sized([width, BTN_HEIGHT], Button::new("Install as new"))
+                    .add_sized([width, BTN_HEIGHT], Button::new("Update another..."))
                     .clicked()
                 {
-                    if let Some(pkg) = self.package.take() {
-                        action(ViewAction::Navigate(Route::Install(pkg, self.shared.take())));
-                    }
+                    action(ViewAction::Navigate(Route::ManualUpdate));
+                }
+
+                ui.add_space(SECTION_SPACING);
+
+                if ui
+                    .add_sized([width, BTN_HEIGHT], Button::new("Install as new..."))
+                    .clicked()
+                {
+                    action(ViewAction::Navigate(Route::Install));
                 }
             });
         });

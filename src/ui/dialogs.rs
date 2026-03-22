@@ -20,3 +20,12 @@ pub fn show_warning_message(message: &str) {
 pub fn show_error_message(message: &str) {
     show_message(message, MessageLevel::Error);
 }
+
+pub fn show_confirm_dialog(message: &str) -> bool {
+    DialogBuilder::message()
+        .set_level(MessageLevel::Warning)
+        .set_text(message)
+        .confirm()
+        .show()
+        .unwrap_or(false)
+}
