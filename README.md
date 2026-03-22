@@ -4,6 +4,7 @@
 
 <!-- gifs here -->
 
+
 ## Features
 
 - All portable apps in one place instead of scattered across folders
@@ -18,11 +19,15 @@ Download the latest binary for your platform from the [Releases](../../releases)
 
 On first launch, `zip-install` presents a setup screen. The **Install** button will register the utility in the context menu. -->
 
+
 ## How It Works
 
-When launched with a file argument (via context menu or drag-and-drop), `zip-install` opens the package and scans for executable candidates. It then computes a Jaccard similarity index between the archive's file structure and each previously installed app. If a match exceeds the configured threshold (default 0.8), it offers to update the existing installation; otherwise it does a new install.
+When launched with a file argument (via context menu or drag-and-drop), `zip-install` opens the package and scans for executable candidates.
 
-Installations are stored under `LocalAppData/ZipInstall/Packages/<uuid>/` (Windows) or `~/.local/share/ZipInstall/Packages/<uuid>/` (Linux), with a TOML index tracking installed apps and a separate config file for user preferences.
+It then computes a Jaccard similarity index between the archive's file structure and each previously installed app. If a match exceeds the configured threshold (default 0.8), it offers to update the existing installation; otherwise it does a new install.
+
+Installations are stored under `%LocalAppData%/ZipInstall/Packages/<uuid>/` (Windows) or `~/.local/share/ZipInstall/Packages/<uuid>/` (Linux), with a TOML index tracking installed apps and a separate config file for user preferences.
+
 
 ## Build
 
@@ -33,6 +38,7 @@ cargo build --release
 ```
 
 The binary will be at `target/release/` folder.
+
 
 ## License
 
