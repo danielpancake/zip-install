@@ -1,9 +1,8 @@
 # zip-install
 
+![zip-install install preview](./assets/preview.gif)
+
 `zip-install` is a small GUI for installing portable applications with automatic update detection.
-
-<!-- gifs here -->
-
 
 ## Features
 
