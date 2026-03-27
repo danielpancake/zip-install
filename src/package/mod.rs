@@ -1,5 +1,7 @@
 mod dir;
-mod exe;
+mod sevenz;
+mod standalone;
+mod targz;
 mod zip;
 
 use std::path::{Path, PathBuf};
@@ -9,7 +11,9 @@ use regex::Regex;
 use std::sync::OnceLock;
 
 pub use dir::DirPackage;
-pub use exe::StandaloneExecutable;
+pub use sevenz::SevenZArchiveHandler;
+pub use standalone::StandaloneExecutable;
+pub use targz::TarGzArchiveHandler;
 pub use zip::ZipArchiveHandler;
 
 #[derive(Clone)]
@@ -83,18 +87,33 @@ pub trait Package {
 }
 
 pub fn open_package(path: &Path) -> Result<Box<dyn Package>> {
+    // Check compound extensions before falling back to simple extension matching
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().to_lowercase())
+        .unwrap_or_default();
+
+    if name.ends_with(".tar.gz") || name.ends_with(".tgz") {
+        let package = TarGzArchiveHandler::open(path)?;
+        return Ok(Box::new(package));
+    }
+
     let extension = path
         .extension()
         .map(|e| e.to_string_lossy().to_lowercase())
         .unwrap_or_default();
 
     match extension.as_str() {
-        "exe" => {
+        "exe" | "bat" => {
             let package = StandaloneExecutable::open(path)?;
             Ok(Box::new(package))
         }
         "zip" => {
             let package = ZipArchiveHandler::open(path)?;
+            Ok(Box::new(package))
+        }
+        "7z" => {
+            let package = SevenZArchiveHandler::open(path)?;
             Ok(Box::new(package))
         }
         _ => Err(anyhow::anyhow!("Unsupported file format: .{}", extension)),

@@ -15,6 +15,11 @@
 - Automatically matches to already installed apps
 - Desktop and Start Menu shortcuts
 
+## TODO:
+
+- List of installed apps (access and remove)
+- Password protected archives
+
 <!-- ## Installation
 
 Download the latest binary for your platform from the [Releases](../../releases) page.

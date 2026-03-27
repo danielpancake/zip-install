@@ -8,7 +8,7 @@ use crate::state::index::{InstallIndex, InstalledApp};
 use crate::state::paths;
 use crate::state::persistable::Persistable;
 
-pub const EXTENSIONS: &[&str] = &[".zip", ".exe"]; // ".7z", ".rar"
+pub const EXTENSIONS: &[&str] = &[".zip", ".exe", ".7z", ".gz", ".tgz"];
 pub const APP_NAME: &str = "ZipInstall";
 pub const MENU_LABEL: &str = "Install with zip-install";
 
