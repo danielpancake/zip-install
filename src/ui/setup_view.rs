@@ -2,9 +2,9 @@ use crate::app::routing::ViewAction;
 use crate::app::state::AppData;
 use crate::core::bootstrap;
 use crate::state::paths;
+use crate::ui::View;
 use crate::ui::constants::*;
 use crate::ui::dialogs::{show_error_message, show_info_message};
-use crate::ui::View;
 
 use eframe::egui::{
     Align, Button, ColorImage, Image, Layout, RichText, TextureHandle, TextureOptions, Ui, Vec2, ViewportBuilder,
@@ -46,7 +46,7 @@ impl View for SetupView {
             .with_minimize_button(false)
     }
 
-    fn ui(&mut self, ui: &mut Ui, _data: &mut AppData, action: &mut dyn FnMut(ViewAction)) {
+    fn ui(&mut self, ui: &mut Ui, _data: &mut AppData, _action: &mut dyn FnMut(ViewAction)) {
         let outer_width = ui.available_width();
 
         ui.with_layout(Layout::top_down(Align::Center), |ui| {

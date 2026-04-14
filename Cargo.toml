@@ -20,9 +20,9 @@ regex = "1.12.3"
 serde = { version = "1.0", features = ["derive"] }
 sevenz-rust = "0.6"
 tar = "0.4"
-toml = "1.1.0"
+toml = "1.1.2"
 uuid = { version = "1.23.0", features = ["v4"] }
-zip = "8.3.1"
+zip = "8.5.1"
 
 [dependencies.native-dialog]
 version = "0.9.6"

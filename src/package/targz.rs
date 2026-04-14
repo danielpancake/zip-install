@@ -1,6 +1,7 @@
 #[cfg(unix)]
 use std::collections::HashMap;
 use std::fs::File;
+use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use anyhow::Result;
@@ -11,16 +12,33 @@ use crate::package::Package;
 
 pub struct TarGzArchiveHandler {
     path: PathBuf,
+    gzipped: bool,
     entries: Vec<PathBuf>,
     #[cfg(unix)]
     unix_modes: HashMap<PathBuf, u32>,
 }
 
+fn is_gzipped(path: &Path) -> bool {
+    !path
+        .extension()
+        .map(|ext| ext.eq_ignore_ascii_case("tar"))
+        .unwrap_or(false)
+}
+
+fn open_tar(path: &Path, gzipped: bool) -> Result<Archive<Box<dyn Read>>> {
+    let file = File::open(path)?;
+    let reader: Box<dyn Read> = if gzipped {
+        Box::new(GzDecoder::new(file))
+    } else {
+        Box::new(file)
+    };
+    Ok(Archive::new(reader))
+}
+
 impl TarGzArchiveHandler {
     pub fn open(path: &Path) -> Result<Self> {
-        let file = File::open(path)?;
-        let decoder = GzDecoder::new(file);
-        let mut archive = Archive::new(decoder);
+        let gzipped = is_gzipped(path);
+        let mut archive = open_tar(path, gzipped)?;
 
         let mut entries = Vec::new();
         #[cfg(unix)]
@@ -42,6 +60,7 @@ impl TarGzArchiveHandler {
 
         Ok(Self {
             path: path.into(),
+            gzipped,
             entries,
             #[cfg(unix)]
             unix_modes,
@@ -51,9 +70,7 @@ impl TarGzArchiveHandler {
 
 impl Package for TarGzArchiveHandler {
     fn extract(&mut self, output_dir: &Path) -> Result<PathBuf> {
-        let file = File::open(&self.path)?;
-        let decoder = GzDecoder::new(file);
-        let mut archive = Archive::new(decoder);
+        let mut archive = open_tar(&self.path, self.gzipped)?;
         archive.unpack(output_dir)?;
         Ok(output_dir.into())
     }
