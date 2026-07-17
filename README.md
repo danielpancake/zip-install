@@ -6,7 +6,6 @@
   <b>zip-install</b> is a small GUI for installing portable applications with automatic update detection
 </p>
 
-
 ## Features
 
 - All portable apps in one place instead of scattered across folders
@@ -15,17 +14,16 @@
 - Automatically matches to already installed apps
 - Desktop and Start Menu shortcuts
 
-## TODO:
+## TODO
 
-- List of installed apps (access and remove)
 - Password protected archives
+- Scripts support as executables (.bat, .py?)
 
 <!-- ## Installation
 
 Download the latest binary for your platform from the [Releases](../../releases) page.
 
 On first launch, `zip-install` presents a setup screen. The **Install** button will register the utility in the context menu. -->
-
 
 ## How It Works
 
@@ -35,17 +33,15 @@ It then computes a Jaccard similarity index between the archive's file structure
 
 Installations are stored under `%LocalAppData%/ZipInstall/Packages/<uuid>/` (Windows) or `~/.local/share/ZipInstall/Packages/<uuid>/` (Linux), with a TOML index tracking installed apps and a separate config file for user preferences.
 
-
 ## Build
 
-```
+```Shell
 git clone https://github.com/danielpancake/zip-install.git
 cd zip-install
 cargo build --release
 ```
 
 The binary will be at `target/release/` folder.
-
 
 ## License
 

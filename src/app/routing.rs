@@ -2,7 +2,7 @@ use crate::state::index::InstalledApp;
 
 #[derive(Clone)]
 pub enum Route {
-    // AppList,
+    AppList,
     Setup,
     Install,
     Update(InstalledApp),
@@ -12,5 +12,4 @@ pub enum Route {
 pub enum ViewAction {
     Navigate(Route),
     Back,
-    Close,
 }

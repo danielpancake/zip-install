@@ -1,3 +1,5 @@
+#[cfg(unix)]
+use std::collections::HashMap;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
@@ -9,16 +11,46 @@ use crate::package::Package;
 pub struct ZipArchiveHandler {
     path: PathBuf,
     zip: ZipArchive<File>,
+    entries: Vec<PathBuf>,
+    #[cfg(unix)]
+    unix_modes: HashMap<PathBuf, u32>,
 }
 
 impl ZipArchiveHandler {
     pub fn open(path: &Path) -> Result<Self> {
         let file = File::open(path)?;
-        let zip = ZipArchive::new(file)?;
+        let mut zip = ZipArchive::new(file)?;
 
-        Ok(Self { path: path.into(), zip })
+        let mut entries = Vec::new();
+        #[cfg(unix)]
+        let mut unix_modes = HashMap::new();
+
+        for i in 0..zip.len() {
+            let entry = zip.by_index_raw(i)?;
+            if entry.is_dir() {
+                continue;
+            }
+
+            let entry_path = PathBuf::from(entry.name());
+
+            #[cfg(unix)]
+            if let Some(mode) = entry.unix_mode() {
+                unix_modes.insert(entry_path.clone(), mode);
+            }
+
+            entries.push(entry_path);
+        }
+
+        Ok(Self {
+            path: path.into(),
+            zip,
+            entries,
+            #[cfg(unix)]
+            unix_modes,
+        })
     }
 }
+
 impl Package for ZipArchiveHandler {
     fn extract(&mut self, output_dir: &Path) -> Result<PathBuf> {
         self.zip.extract(output_dir)?;
@@ -27,28 +59,16 @@ impl Package for ZipArchiveHandler {
 
     #[cfg(windows)]
     fn is_executable(&self, path: &Path) -> bool {
-        path.extension()
-            .map(|ext| ext.eq_ignore_ascii_case("exe"))
-            .unwrap_or(false)
+        crate::package::has_exe_extension(path)
     }
 
     #[cfg(unix)]
-    // untested... does it even work? idk
     fn is_executable(&self, path: &Path) -> bool {
-        self.zip
-            .by_name(path.to_str().unwrap())
-            .ok()
-            .and_then(|f| f.unix_mode())
-            .map(|mode| mode & 0o111 != 0)
-            .unwrap_or(false)
+        self.unix_modes.get(path).map(|mode| mode & 0o111 != 0).unwrap_or(false)
     }
 
     fn list(&self) -> Vec<PathBuf> {
-        self.zip
-            .file_names()
-            .filter(|e: &&str| !e.ends_with('/'))
-            .map(|e| e.into())
-            .collect()
+        self.entries.clone()
     }
 
     fn source(&self) -> &Path {

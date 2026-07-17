@@ -1,9 +1,21 @@
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 
 use anyhow::Result;
 use sevenz_rust::{Password, SevenZReader};
 
 use crate::package::Package;
+
+fn sanitized_join(base: &Path, entry_name: &str) -> Option<PathBuf> {
+    let mut out = base.to_path_buf();
+    for component in Path::new(entry_name).components() {
+        match component {
+            Component::Normal(part) => out.push(part),
+            Component::CurDir => {}
+            _ => return None,
+        }
+    }
+    Some(out)
+}
 
 pub struct SevenZArchiveHandler {
     path: PathBuf,
@@ -31,15 +43,20 @@ impl SevenZArchiveHandler {
 
 impl Package for SevenZArchiveHandler {
     fn extract(&mut self, output_dir: &Path) -> Result<PathBuf> {
-        sevenz_rust::decompress_file(&self.path, output_dir)?;
+        // sevenz_rust joins entry names onto the destination unsanitized, so
+        // recompute each path ourselves and reject escaping entries
+        let dest = output_dir.to_path_buf();
+        sevenz_rust::decompress_file_with_extract_fn(&self.path, output_dir, |entry, reader, _| {
+            let safe_path = sanitized_join(&dest, entry.name())
+                .ok_or_else(|| sevenz_rust::Error::other(format!("Unsafe path in archive: {}", entry.name())))?;
+            sevenz_rust::default_entry_extract_fn(entry, reader, &safe_path)
+        })?;
         Ok(output_dir.into())
     }
 
     #[cfg(windows)]
     fn is_executable(&self, path: &Path) -> bool {
-        path.extension()
-            .map(|ext| ext.eq_ignore_ascii_case("exe"))
-            .unwrap_or(false)
+        crate::package::has_exe_extension(path)
     }
 
     #[cfg(unix)]

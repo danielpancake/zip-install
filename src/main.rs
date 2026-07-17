@@ -10,6 +10,7 @@ mod ui;
 use crate::app::App;
 use crate::app::routing::Route;
 use crate::app::state::{AppData, SharedState};
+use crate::core::fingerprint::Fingerprint;
 use crate::package::open_package;
 use crate::state::config::Config;
 use crate::state::index::InstallIndex;
@@ -31,6 +32,7 @@ fn main() -> eframe::Result<()> {
                 package: None,
                 shared: SharedState::from_config(&config),
                 candidates: vec![],
+                job: None,
             };
 
             let view = Box::new(SetupView::new(config.is_installed()));
@@ -54,15 +56,17 @@ fn main() -> eframe::Result<()> {
                 return Ok(());
             }
 
-            let index = InstallIndex::load().unwrap_or_default();
-            let has_installed_apps = !index.entries.is_empty();
+            let mut index = InstallIndex::load().unwrap_or_default();
+            let has_installed_apps = !index.apps(config.self_uuid.as_deref()).is_empty();
 
-            let detected_target = core::detect_update(package.as_ref(), &config);
+            let fingerprint = Fingerprint::from_package(package.as_ref());
+            let detected_target = core::detect_update(&mut index, &fingerprint, &config);
 
             let data = AppData {
                 package: Some(package),
                 shared: SharedState::from_config(&config),
                 candidates,
+                job: None,
             };
 
             let (route, view): (Route, Box<dyn View>) = match detected_target {

@@ -1,11 +1,10 @@
+use crate::app::job;
 use crate::app::routing::ViewAction;
 use crate::app::state::AppData;
-use crate::core::installer::update;
-use crate::state::index::{InstallIndex, InstalledApp};
-use crate::state::persistable::Persistable;
+use crate::state::index::InstalledApp;
 use crate::ui::View;
 use crate::ui::constants::*;
-use crate::ui::dialogs::{show_confirm_dialog, show_error_message, show_info_message, show_warning_message};
+use crate::ui::dialogs::show_confirm_dialog;
 
 use eframe::egui::{Align, Button, ComboBox, Layout, RichText, Ui, ViewportBuilder};
 
@@ -96,50 +95,29 @@ impl View for ManualUpdateView {
 
                 ui.add_space(SECTION_SPACING);
 
-                let has_target = self.update_target_index.is_some();
+                let target = self.update_target_index.and_then(|i| self.all_packages.get(i));
 
-                ui.add_enabled_ui(has_target, |ui| {
+                ui.add_enabled_ui(target.is_some(), |ui| {
                     if ui
                         .add_sized([width, BTN_MAIN_HEIGHT], Button::new("Confirm Update"))
                         .clicked()
-                    {
-                        let target_name = &self.all_packages[self.update_target_index.unwrap()].app_name;
-                        if show_confirm_dialog(&format!(
+                        && let Some(target) = target
+                        && show_confirm_dialog(&format!(
                             "This will overwrite the existing installation of \"{}\".\n\nContinue?",
-                            target_name
-                        )) {
-                            let target = &self.all_packages[self.update_target_index.unwrap()];
-                            if let Some(package) = data.package.as_mut() {
-                                let candidate = data.candidates[data.shared.candidates_index].clone();
-                                match update(
-                                    package.as_mut(),
-                                    candidate.clone(),
-                                    &target.uuid,
-                                    data.shared.checkbox_shortcut_desktop,
-                                    data.shared.checkbox_shortcut_menu,
-                                ) {
-                                    Ok(()) => {
-                                        let mut index = InstallIndex::load().unwrap_or_default();
-                                        index.add_entry(&target.uuid, InstalledApp::from(&candidate));
-                                        if let Err(e) = index.save() {
-                                            show_error_message(&format!("Failed to save index: {}", e));
-                                        }
-                                        if data.shared.checkbox_remove_package {
-                                            if let Some(pkg) = data.package.as_ref() {
-                                                if let Err(e) = std::fs::remove_file(pkg.source()) {
-                                                    show_warning_message(&format!("Failed to remove package: {}", e));
-                                                }
-                                            }
-                                        }
-                                        show_info_message("Application updated successfully.");
-                                        action(ViewAction::Close);
-                                    }
-                                    Err(e) => {
-                                        show_error_message(&format!("Failed to update! {}", e));
-                                    }
-                                }
-                            }
-                        }
+                            target.app_name
+                        ))
+                        && let Some(package) = data.package.take()
+                    {
+                        let candidate = data.candidates[data.shared.candidates_index].clone();
+                        data.job = Some(job::spawn(
+                            package,
+                            candidate,
+                            Some(target),
+                            data.shared.checkbox_shortcut_desktop,
+                            data.shared.checkbox_shortcut_menu,
+                            data.shared.checkbox_remove_package,
+                            ui.ctx().clone(),
+                        ));
                     }
                 });
             });

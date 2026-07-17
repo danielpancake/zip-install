@@ -3,6 +3,7 @@ use eframe::egui;
 use crate::app::routing::ViewAction;
 use crate::app::state::AppData;
 
+pub mod app_list_view;
 pub mod constants;
 pub mod dialogs;
 pub mod install_view;

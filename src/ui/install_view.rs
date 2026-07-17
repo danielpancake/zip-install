@@ -1,11 +1,8 @@
+use crate::app::job;
 use crate::app::routing::{Route, ViewAction};
 use crate::app::state::AppData;
-use crate::core::installer::install;
-use crate::state::index::{InstallIndex, InstalledApp};
-use crate::state::persistable::Persistable;
 use crate::ui::View;
 use crate::ui::constants::*;
-use crate::ui::dialogs::{show_error_message, show_info_message, show_warning_message};
 
 use eframe::egui::{Align, Button, ComboBox, Layout, RichText, Ui, ViewportBuilder};
 
@@ -63,36 +60,19 @@ impl View for InstallView {
 
                 ui.add_space(SECTION_SPACING);
 
-                if ui.add_sized([width, BTN_MAIN_HEIGHT], Button::new("Install")).clicked() {
-                    if let Some(package) = data.package.as_mut() {
-                        let candidate = data.candidates[data.shared.candidates_index].clone();
-                        match install(
-                            package.as_mut(),
-                            candidate.clone(),
-                            data.shared.checkbox_shortcut_desktop,
-                            data.shared.checkbox_shortcut_menu,
-                        ) {
-                            Ok(uuid) => {
-                                let mut index = InstallIndex::load().unwrap_or_default();
-                                index.add_entry(&uuid, InstalledApp::from(&candidate));
-                                if let Err(e) = index.save() {
-                                    show_error_message(&format!("Failed to save index: {}", e));
-                                }
-                                if data.shared.checkbox_remove_package {
-                                    if let Some(pkg) = data.package.as_ref() {
-                                        if let Err(e) = std::fs::remove_file(pkg.source()) {
-                                            show_warning_message(&format!("Failed to remove package: {}", e));
-                                        }
-                                    }
-                                }
-                                show_info_message("Application installed successfully.");
-                                action(ViewAction::Close);
-                            }
-                            Err(e) => {
-                                show_error_message(&format!("Failed to install! {}", e));
-                            }
-                        }
-                    }
+                if ui.add_sized([width, BTN_MAIN_HEIGHT], Button::new("Install")).clicked()
+                    && let Some(package) = data.package.take()
+                {
+                    let candidate = data.candidates[data.shared.candidates_index].clone();
+                    data.job = Some(job::spawn(
+                        package,
+                        candidate,
+                        None,
+                        data.shared.checkbox_shortcut_desktop,
+                        data.shared.checkbox_shortcut_menu,
+                        data.shared.checkbox_remove_package,
+                        ui.ctx().clone(),
+                    ));
                 }
 
                 if self.has_installed_apps {

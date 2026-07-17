@@ -48,9 +48,7 @@ impl Package for GzipStandalone {
 
     #[cfg(windows)]
     fn is_executable(&self, path: &Path) -> bool {
-        path.extension()
-            .map(|ext| ext.eq_ignore_ascii_case("exe"))
-            .unwrap_or(false)
+        crate::package::has_exe_extension(path)
     }
 
     #[cfg(unix)]

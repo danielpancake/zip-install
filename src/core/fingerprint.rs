@@ -1,9 +1,8 @@
-use anyhow::Result;
-use std::collections::{HashMap, HashSet};
-use std::fs;
-use std::path::{Path, PathBuf};
+use std::collections::HashSet;
+use std::path::Path;
 
-use crate::package::Package;
+use crate::package::{DirPackage, Package, strip_version};
+use crate::state::index::StoredFingerprint;
 
 #[derive(Debug)]
 pub struct Fingerprint {
@@ -12,20 +11,25 @@ pub struct Fingerprint {
 }
 
 impl Fingerprint {
-    pub fn from_package(package: &dyn Package) -> Result<Self> {
-        let files = package
-            .list()
+    pub fn from_package(package: &dyn Package) -> Self {
+        let entries = package.list();
+
+        let candidates = entries
+            .iter()
+            .filter(|path| package.is_executable(path))
+            .map(|path| strip_version(path))
+            .collect();
+
+        let files = entries
             .iter()
             .map(|e| Self::normalize_path(&e.to_string_lossy()))
             .collect();
-        let candidates = package.candidates().iter().map(|e| e.app_name.clone()).collect();
 
-        Ok(Self { files, candidates })
+        Self { files, candidates }
     }
 
-    pub fn from_path(path: &Path) -> Result<Self> {
-        let package = crate::package::DirPackage::open(path)?;
-        Self::from_package(&package)
+    pub fn from_path(path: &Path) -> Self {
+        Self::from_package(&DirPackage::open(path))
     }
 
     pub fn similarity(&self, other: &Self) -> f64 {
@@ -38,7 +42,7 @@ impl Fingerprint {
     fn normalize_path(path: &str) -> String {
         path.replace('\\', "/")
             .split('/')
-            .map(|component| crate::package::strip_version(Path::new(component)))
+            .map(|component| strip_version(Path::new(component)))
             .collect::<Vec<_>>()
             .join("/")
     }
@@ -55,46 +59,22 @@ impl Fingerprint {
     }
 }
 
-pub struct AppMatcher {
-    pub known_apps: HashMap<PathBuf, Fingerprint>,
+impl From<&Fingerprint> for StoredFingerprint {
+    fn from(fingerprint: &Fingerprint) -> Self {
+        let mut files: Vec<String> = fingerprint.files.iter().cloned().collect();
+        let mut candidates: Vec<String> = fingerprint.candidates.iter().cloned().collect();
+        files.sort();
+        candidates.sort();
+
+        Self { files, candidates }
+    }
 }
 
-impl AppMatcher {
-    pub fn new() -> Self {
-        Self {
-            known_apps: HashMap::new(),
+impl StoredFingerprint {
+    pub fn to_fingerprint(&self) -> Fingerprint {
+        Fingerprint {
+            files: self.files.iter().cloned().collect(),
+            candidates: self.candidates.iter().cloned().collect(),
         }
-    }
-
-    pub fn scan_installations(&mut self, install_dir: &Path) -> Result<()> {
-        if !install_dir.exists() {
-            return Ok(());
-        }
-
-        for entry in fs::read_dir(install_dir)? {
-            let entry = entry?;
-            let path = entry.path();
-
-            if path.is_dir()
-                && let Ok(fingerprint) = Fingerprint::from_path(&path)
-            {
-                self.known_apps.insert(path, fingerprint);
-            }
-        }
-
-        Ok(())
-    }
-
-    pub fn find_match(&self, archive_fingerprint: &Fingerprint, threshold: f64) -> Option<(PathBuf, f64)> {
-        self.known_apps
-            .iter()
-            .map(|(path, fp)| (path.clone(), fp.similarity(archive_fingerprint)))
-            .filter(|(_, score)| *score >= threshold)
-            .max_by(|(path1, score1), (path2, score2)| {
-                score1
-                    .partial_cmp(score2)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-                    .then_with(|| path1.cmp(path2))
-            })
     }
 }

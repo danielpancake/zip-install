@@ -9,8 +9,8 @@ pub struct DirPackage {
 }
 
 impl DirPackage {
-    pub fn open(path: &Path) -> Result<Self> {
-        Ok(Self { path: path.into() })
+    pub fn open(path: &Path) -> Self {
+        Self { path: path.into() }
     }
 
     fn collect_files(&self, dir: &Path) -> Result<Vec<PathBuf>> {
@@ -55,7 +55,7 @@ impl Package for DirPackage {
     fn is_executable(&self, path: &Path) -> bool {
         #[cfg(windows)]
         {
-            path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("exe"))
+            crate::package::has_exe_extension(path)
         }
         #[cfg(unix)]
         {

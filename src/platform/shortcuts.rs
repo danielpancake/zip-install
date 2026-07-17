@@ -1,16 +1,19 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::Result;
 
+/// Creates a shortcut to `src` at `dest` (extension adjusted per platform)
+/// and returns the path of the file actually created.
 #[cfg(target_os = "windows")]
-pub fn create_shortcut(src: &Path, dest: &Path) -> Result<()> {
+pub fn create_shortcut(src: &Path, dest: &Path) -> Result<PathBuf> {
+    let lnk_path = dest.with_extension("lnk");
     let shell_link = mslnk::ShellLink::new(src)?;
-    shell_link.create_lnk(dest.with_extension("lnk"))?;
-    Ok(())
+    shell_link.create_lnk(&lnk_path)?;
+    Ok(lnk_path)
 }
 
 #[cfg(target_os = "linux")]
-pub fn create_shortcut(src: &Path, dest: &Path) -> Result<()> {
+pub fn create_shortcut(src: &Path, dest: &Path) -> Result<PathBuf> {
     let app_name = src
         .file_stem()
         .map(|s| s.to_string_lossy().into_owned())
@@ -26,6 +29,7 @@ pub fn create_shortcut(src: &Path, dest: &Path) -> Result<()> {
         exec = src.to_string_lossy(),
     );
 
-    std::fs::write(dest.with_extension("desktop"), desktop)?;
-    Ok(())
+    let desktop_path = dest.with_extension("desktop");
+    std::fs::write(&desktop_path, desktop)?;
+    Ok(desktop_path)
 }

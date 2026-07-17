@@ -1,4 +1,4 @@
-use crate::app::routing::ViewAction;
+use crate::app::routing::{Route, ViewAction};
 use crate::app::state::AppData;
 use crate::core::bootstrap;
 use crate::state::paths;
@@ -40,13 +40,13 @@ impl View for SetupView {
     fn viewport(&self) -> ViewportBuilder {
         ViewportBuilder::default()
             .with_title("zip-install — Setup")
-            .with_inner_size([WINDOW_WIDTH * 2.5, 220.0])
+            .with_inner_size([WINDOW_WIDTH * 2.5, 260.0])
             .with_resizable(false)
             .with_maximize_button(false)
             .with_minimize_button(false)
     }
 
-    fn ui(&mut self, ui: &mut Ui, _data: &mut AppData, _action: &mut dyn FnMut(ViewAction)) {
+    fn ui(&mut self, ui: &mut Ui, _data: &mut AppData, action: &mut dyn FnMut(ViewAction)) {
         let outer_width = ui.available_width();
 
         ui.with_layout(Layout::top_down(Align::Center), |ui| {
@@ -124,6 +124,15 @@ impl View for SetupView {
                             }
                         }
                     }
+                }
+
+                ui.add_space(SECTION_SPACING);
+
+                if ui
+                    .add_sized([width, BTN_HEIGHT], Button::new("Manage installed apps..."))
+                    .clicked()
+                {
+                    action(ViewAction::Navigate(Route::AppList));
                 }
             });
         });

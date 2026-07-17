@@ -1,3 +1,4 @@
+use crate::app::job::InstallJob;
 use crate::package::{Candidate, Package};
 use crate::state::config::Config;
 
@@ -5,6 +6,7 @@ pub struct AppData {
     pub package: Option<Box<dyn Package>>,
     pub shared: SharedState,
     pub candidates: Vec<Candidate>,
+    pub job: Option<InstallJob>,
 }
 
 pub struct SharedState {

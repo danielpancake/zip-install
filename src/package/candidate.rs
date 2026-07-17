@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
-use regex::Regex;
+use regex_lite::Regex;
 
 #[derive(Clone)]
 pub struct Candidate {
@@ -35,17 +35,17 @@ pub fn disambiguate_candidates(candidates: &mut [Candidate]) {
     }
 
     for c in candidates.iter_mut() {
-        if counts[&c.file_name] > 1 {
-            if let Some(parent) = c.relative_path.parent() {
-                let folder = parent
-                    .components()
-                    .next_back()
-                    .map(|comp| comp.as_os_str().to_string_lossy().into_owned())
-                    .unwrap_or_default();
+        if counts[&c.file_name] > 1
+            && let Some(parent) = c.relative_path.parent()
+        {
+            let folder = parent
+                .components()
+                .next_back()
+                .map(|comp| comp.as_os_str().to_string_lossy().into_owned())
+                .unwrap_or_default();
 
-                if !folder.is_empty() {
-                    c.display_name = format!("{} ({})", c.file_name, folder);
-                }
+            if !folder.is_empty() {
+                c.display_name = format!("{} ({})", c.file_name, folder);
             }
         }
     }

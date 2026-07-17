@@ -1,21 +1,23 @@
+use crate::app::job;
 use crate::app::routing::{Route, ViewAction};
 use crate::app::state::AppData;
-use crate::core::installer::update;
-use crate::state::index::{InstallIndex, InstalledApp};
-use crate::state::persistable::Persistable;
+use crate::state::index::InstalledApp;
 use crate::ui::View;
 use crate::ui::constants::*;
-use crate::ui::dialogs::{show_error_message, show_info_message, show_warning_message};
 
-use eframe::egui::{Align, Button, Layout, RichText, Ui, ViewportBuilder};
+use eframe::egui::{Align, Button, ComboBox, Layout, RichText, Ui, ViewportBuilder};
 
 pub struct UpdateView {
     target: InstalledApp,
+    exe_preselected: bool,
 }
 
 impl UpdateView {
     pub fn new(target: InstalledApp) -> Self {
-        Self { target }
+        Self {
+            target,
+            exe_preselected: false,
+        }
     }
 }
 
@@ -24,13 +26,25 @@ impl View for UpdateView {
         ViewportBuilder::default()
             .with_title("zip-install — Update")
             .with_resizable(false)
-            .with_inner_size([WINDOW_WIDTH, 260.0])
+            .with_inner_size([WINDOW_WIDTH, 340.0])
             .with_maximize_button(false)
             .with_minimize_button(false)
     }
 
     fn ui(&mut self, ui: &mut Ui, data: &mut AppData, action: &mut dyn FnMut(ViewAction)) {
         let outer_width = ui.available_width();
+
+        if data.candidates.is_empty() {
+            return;
+        }
+
+        // Default to the target's recorded executable, not whatever the
+        // shared index happens to hold, so an update can't silently switch
+        // the app's main exe. Done once per entry into this view
+        if !self.exe_preselected {
+            self.exe_preselected = true;
+            data.shared.candidates_index = self.target.matching_candidate(&data.candidates).unwrap_or(0);
+        }
 
         ui.with_layout(Layout::top_down(Align::Center), |ui| {
             ui.add_space(PADDING_TOP);
@@ -44,45 +58,39 @@ impl View for UpdateView {
 
                 ui.add_space(SECTION_SPACING);
 
+                ui.label(RichText::new("Select executable"));
+                ui.add_space(LABEL_SPACING);
+
+                ComboBox::from_id_salt("update_exe")
+                    .width(width)
+                    .selected_text(&data.candidates[data.shared.candidates_index].display_name)
+                    .show_ui(ui, |ui| {
+                        for (i, exe) in data.candidates.iter().enumerate() {
+                            ui.selectable_value(&mut data.shared.candidates_index, i, &exe.display_name);
+                        }
+                    });
+
+                ui.add_space(SECTION_SPACING);
+
                 ui.checkbox(&mut data.shared.checkbox_shortcut_desktop, "Create Desktop shortcut");
                 ui.checkbox(&mut data.shared.checkbox_shortcut_menu, LABEL_APP_LAUNCHER);
                 ui.checkbox(&mut data.shared.checkbox_remove_package, "Remove after install");
 
                 ui.add_space(SECTION_SPACING);
 
-                if ui.add_sized([width, BTN_MAIN_HEIGHT], Button::new("Update")).clicked() {
-                    if let (Some(package), Some(candidate)) = (
-                        data.package.as_mut(),
-                        data.candidates.get(data.shared.candidates_index).cloned(),
-                    ) {
-                        match update(
-                            package.as_mut(),
-                            candidate.clone(),
-                            &self.target.uuid,
-                            data.shared.checkbox_shortcut_desktop,
-                            data.shared.checkbox_shortcut_menu,
-                        ) {
-                            Ok(()) => {
-                                let mut index = InstallIndex::load().unwrap_or_default();
-                                index.add_entry(&self.target.uuid, InstalledApp::from(&candidate));
-                                if let Err(e) = index.save() {
-                                    show_error_message(&format!("Failed to save index: {}", e));
-                                }
-                                if data.shared.checkbox_remove_package {
-                                    if let Some(pkg) = data.package.as_ref() {
-                                        if let Err(e) = std::fs::remove_file(pkg.source()) {
-                                            show_warning_message(&format!("Failed to remove package: {}", e));
-                                        }
-                                    }
-                                }
-                                show_info_message("Application updated successfully.");
-                                action(ViewAction::Close);
-                            }
-                            Err(e) => {
-                                show_error_message(&format!("Failed to update! {}", e));
-                            }
-                        }
-                    }
+                if ui.add_sized([width, BTN_MAIN_HEIGHT], Button::new("Update")).clicked()
+                    && let Some(candidate) = data.candidates.get(data.shared.candidates_index).cloned()
+                    && let Some(package) = data.package.take()
+                {
+                    data.job = Some(job::spawn(
+                        package,
+                        candidate,
+                        Some(&self.target),
+                        data.shared.checkbox_shortcut_desktop,
+                        data.shared.checkbox_shortcut_menu,
+                        data.shared.checkbox_remove_package,
+                        ui.ctx().clone(),
+                    ));
                 }
 
                 ui.add_space(SECTION_SPACING);
@@ -104,5 +112,65 @@ impl View for UpdateView {
                 }
             });
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::app::state::{AppData, SharedState};
+    use crate::package::Candidate;
+    use crate::state::index::StoredFingerprint;
+
+    /// Runs one headless frame of the view so the first-frame preselection fires.
+    fn run_frame(view: &mut UpdateView, data: &mut AppData) {
+        let ctx = eframe::egui::Context::default();
+        let input = eframe::egui::RawInput {
+            screen_rect: Some(eframe::egui::Rect::from_min_size(
+                Default::default(),
+                eframe::egui::vec2(WINDOW_WIDTH, 1000.0),
+            )),
+            ..Default::default()
+        };
+
+        let _ = ctx.run(input, |ctx| {
+            eframe::egui::CentralPanel::default().show(ctx, |ui| {
+                view.ui(ui, data, &mut |_| {});
+            });
+        });
+    }
+
+    #[test]
+    fn preselects_target_executable() {
+        let target = InstalledApp {
+            uuid: "uuid-1".into(),
+            app_name: "SuperApp".into(),
+            file_name: "app.exe".into(),
+            main_path: "app/app.exe".into(),
+            installed_at: String::new(),
+            shortcuts: Vec::new(),
+            fingerprint: StoredFingerprint::default(),
+        };
+        let mut data = AppData {
+            package: None,
+            shared: SharedState {
+                candidates_index: 0,
+                checkbox_shortcut_desktop: true,
+                checkbox_shortcut_menu: true,
+                checkbox_remove_package: false,
+            },
+            candidates: vec![
+                Candidate::from(std::path::PathBuf::from("app/uninstall.exe")),
+                Candidate::from(std::path::PathBuf::from("app/app.exe")),
+            ],
+            job: None,
+        };
+
+        run_frame(&mut UpdateView::new(target), &mut data);
+
+        assert_eq!(
+            data.shared.candidates_index, 1,
+            "must select the installed app's exe, not candidate 0"
+        );
     }
 }

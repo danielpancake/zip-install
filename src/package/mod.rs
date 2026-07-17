@@ -22,7 +22,12 @@ pub use zip::ZipArchiveHandler;
 
 use candidate::disambiguate_candidates;
 
-pub trait Package {
+#[cfg(windows)]
+pub(crate) fn has_exe_extension(path: &Path) -> bool {
+    path.extension().is_some_and(|ext| ext.eq_ignore_ascii_case("exe"))
+}
+
+pub trait Package: Send {
     fn candidates(&self) -> Vec<Candidate> {
         let mut candidates: Vec<Candidate> = self
             .list()
